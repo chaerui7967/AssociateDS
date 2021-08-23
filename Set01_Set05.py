@@ -252,18 +252,26 @@ Q2_temp2.sort_values(by='pvalues').tail(1)
 # 12.345
 # =============================================================================
 
+from sklearn.tree import DecisionTreeClassifier, plot_tree, export_text
 
+Q3=dataset2.copy()
 
+# 변수 변환
+Q3['Sex_cd']=np.where(Q3.Sex == 'M', 0, 1)
+Q3['BP_cd']=np.where(Q3.BP == 'LOW', 0,
+                     np.where(Q3.BP=='NORMAL',1,2))
+Q3['Ch_cd']=np.where(Q3.Cholesterol == 'NORMAL', 0, 1)
 
+x_var=['Age', 'Na_to_K', "Sex_cd", 'BP_cd', 'Ch_cd']
 
+dt=DecisionTreeClassifier().fit(Q3[x_var], Q3.Drug)
 
+plot_tree(dt, feature_names = x_var, class_names=Q3.Drug.unique())
 
+export_text(dt, feature_names = x_var, decimals=3)
 
-
-
-
-
-
+# 답
+# Na_to_K <= 14.829
 
 
 #%%
@@ -292,7 +300,10 @@ Q2_temp2.sort_values(by='pvalues').tail(1)
 # =============================================================================
 # =============================================================================
 
-
+dataset3 = pd.read_csv('./Dataset/DataSet_03.csv')
+dataset3.columns
+dataset3.shape
+dataset3.dtypes
 
 #%%
 
@@ -302,20 +313,32 @@ Q2_temp2.sort_values(by='pvalues').tail(1)
 # 정의할 때, 이상치에 해당하는 데이터는 몇 개인가? (답안 예시) 10
 # =============================================================================
 
+# 변수 생성(forehead_ration)
+Q1 = dataset3.copy()
+Q1['forehead_ratio'] = Q1['forehead_width_cm'] / Q1['forehead_height_cm']
+m = Q1['forehead_ratio'].mean()
+sd = Q1['forehead_ratio'].std()
 
+cnt = len(Q1[Q1['forehead_ratio'] > m+3*sd]) + len(Q1[Q1['forehead_ratio'] < m-3*sd])
+cnt
 
+## 풀이
+## 동일
+LL=m - (3*sd)
+UU=m + (3*sd)
+Q1_out = Q1[(Q1['forehead_ratio'] < LL) | (Q1['forehead_ratio'] > UU)]
+Q1_ans = len(Q1_out)
+print(Q1_ans)
 
-
-
-
-
+# 답
+# 3
 
 
 #%%
 
 # =============================================================================
 # 2.성별에 따라 forehead_ratio 평균에 차이가 있는지 적절한 통계 검정을 수행하시오.
-# - 검정은 이분산을 가정하고 수행한다.
+# - 검정은 이분산을 가정하고 수행한다. 
 # - 검정통계량의 추정치는 절대값을 취한 후 소수점 셋째 자리까지 반올림하여
 # 기술하시오.
 # - 신뢰수준 99%에서 양측 검정을 수행하고 결과는 귀무가설 기각의 경우 Y로, 그렇지
@@ -323,14 +346,26 @@ Q2_temp2.sort_values(by='pvalues').tail(1)
 # =============================================================================
 
 
+# 집단 수 확인
+# 2개 ==>  t-test --> 독립표본 vs 대응표본
+#       --> 대응의 경우 분산를 가정하지 않음
+# else ==> anova
 
+# 독립인 두 집단간의 평균차이
 
+from scipy.stats import ttest_1samp, ttest_ind, ttest_rel 
+# 독립 1표본, 독립 2표본, 대응표본
 
+ttest_ind(Q1.forehead_ratio[Q1.gender=='Male'],
+          Q1.forehead_ratio[Q1.gender=='Female'],
+          equal_var=False)  # 이분산 가정 
+            # conf_level=0.99
 
+# 답
+# Ttest_indResult(statistic=2.9994984197511543
+#                pvalue=0.0027186702390657176)
 
-
-
-
+# 2.999 Y
 
 
 #%%
@@ -356,16 +391,30 @@ Q2_temp2.sort_values(by='pvalues').tail(1)
 # =============================================================================
 
 
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report, precision_score
 
+# 데이터 분리
+train, test = train_test_split(dataset3, test_size=0.3,
+                                                    random_state=123)
+model1 = LogisticRegression().fit(train.drop(columns='gender'),
+                                  train.gender)
 
+pred = model1.predict(test.drop(columns='gender'))
 
+pred_p = model1.predict_proba(test.drop(columns='gender'))
+# 기본 임계값은 0.5 바꾸고 싶다면 /임계값해서 몫이 있으면 1 없으면 0
 
+print(classification_report(test.gender, pred))
 
+precision_score(test.gender, pred, pos_label='Male')
 
+# 답
+# 0.9596354166666666
 
-
-
-
+# 임계값 변경
+(pred_p[:,1] > 0.7).sum()
 
 
 #%%
@@ -397,6 +446,8 @@ Q2_temp2.sort_values(by='pvalues').tail(1)
 # #3
 # from sklearn.linear_model import LinearRegression
 
+dataset4 = pd.read_csv('./Dataset/DataSet_04.csv')
+
 #%%
 
 # =============================================================================
@@ -408,10 +459,20 @@ Q2_temp2.sort_values(by='pvalues').tail(1)
 # (답안 예시) 0.55
 # =============================================================================
 
+dataset4.columns
+# ['LOCATION', 'SUBJECT', 'TIME', 'Value']
+Q1 = dataset4.copy()
 
+Q1 = Q1[Q1.LOCATION == 'KOR']
+Q1_out = pd.pivot_table(data=Q1, index='TIME',
+                        values='Value',
+                        aggfunc='sum')
+Q1_out.reset_index(inplace=True)
 
+Q1_out.corr()['Value']['TIME']
 
-
+# 답
+# 0.96
 
 
 #%%
@@ -424,8 +485,31 @@ Q2_temp2.sort_values(by='pvalues').tail(1)
 # 적으시오. (알파벳 순서) (답안 예시) BEEF, PIG, POULTRY, SHEEP
 # =============================================================================
 
+from scipy.stats import ttest_rel
 
+Q2 = dataset4[dataset4.LOCATION.isin(['KOR', 'JPN'])]
+Q2_out = pd.pivot_table(data=Q2, index=['TIME', 'SUBJECT'],
+                        columns = 'LOCATION',
+                        values = 'Value')
+Q2_out=Q2_out.dropna()
+Q2_out = Q2_out.reset_index()
 
+sub_list = Q2_out.SUBJECT.unique()
+# ['POULTRY', 'SHEEP', 'BEEF', 'PIG']
+
+Q2_out2 =[]
+
+for i in sub_list:
+    temp = Q2_out[Q2_out.SUBJECT==i]
+    pvalue = ttest_rel(temp['KOR'], temp['JPN']).pvalue
+    Q2_out2 = Q2_out2 + [[i, pvalue]]
+    
+Q2_out2 = pd.DataFrame(Q2_out2, columns = ['sub', 'pvalue'])
+
+Q2_out2[Q2_out2.pvalue >= 0.05]
+
+# 답
+# POULTRY
 
 
 
@@ -441,17 +525,38 @@ Q2_temp2.sort_values(by='pvalues').tail(1)
 # =============================================================================
 
 
+from sklearn.linear_model import LinearRegression
+from statsmodels.api import OLS, add_constant
+from sklearn.metrics import r2_score, mean_absolute_error
+
+Q3 = Q2_out.drop(columns = 'JPN')
+
+Q3_out=[]
+
+sub_list = Q3.SUBJECT.unique()
+
+for i in sub_list:
+    temp = Q3[Q3.SUBJECT == i]  # 입력변수는 2차원구조로 입력해야함
+    lm = LinearRegression().fit(temp[['TIME']], temp.KOR)  # Q3[''] 는 1차원,
+    # Q3[['']] 2차원
+    r2_Score = lm.score(temp[['TIME']], temp.KOR)
+    Q3_out = Q3_out + [[i,r2_Score]]
+
+Q3_out = pd.DataFrame(Q3_out, columns = ['sub', 'r2_score'])
+# 'POULTRY'
+
+temp = Q3[Q3.SUBJECT == 'POULTRY']
+lm2 = LinearRegression().fit(temp[['TIME']], temp.KOR)
+pred = lm2.predict(temp[['TIME']])
+
+# MAPE = Σ ( | y - y ̂ | / y ) * 100/n 
+
+mape = sum(abs(temp.KOR - pred) / temp.KOR) * 100 / len(temp)
+# 답
+# 5.783357902874552
 
 
-
-
-
-
-
-
-
-
-
+    
 #%%
 
 # =============================================================================
