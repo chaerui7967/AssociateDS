@@ -24,7 +24,9 @@ Created on Sat Aug 21 14:36:08 2021
 # =============================================================================
 # =============================================================================
 
+import pandas as pd
 
+dataset11 = pd.read_csv('./Dataset/DataSet_11.csv')
 
 
 #%%
@@ -37,10 +39,14 @@ Created on Sat Aug 21 14:36:08 2021
 # 활용하시오.(답안 예시) 1
 # =============================================================================
 
+Q1 = pd.pivot_table(dataset11, index = 'Country',
+                    columns = 'year',
+                    values = 'Happiness_Score')
+Q1['na_num'] = Q1.isna().sum(axis=1)
+Q1_2 = Q1[Q1['na_num'] < 1]
 
-
-
-
+# 답 20개
+sum(Q1['na_num'] > 0) 
 
 
 
@@ -57,14 +63,19 @@ Created on Sat Aug 21 14:36:08 2021
 # =============================================================================
 
 
+Q2 = Q1_2.drop(columns = 'na_num')
 
+Q2['ratio'] = (Q2[2017] - Q2[2015]) / 2
 
+Q2['ratio'].nlargest(3)
 
+# Latvia     0.3760
+# Romania    0.3505
+# Togo       0.3280
 
-
-
-
-
+# 답
+Q2['ratio'].nlargest(3).index
+# 'Latvia', 'Romania', 'Togo'
 
 
 
@@ -82,13 +93,43 @@ Created on Sat Aug 21 14:36:08 2021
 # from statsmodels.formula.api import ols
 # from statsmodels.stats.anova import anova_lm
 
+from statsmodels.formula.api import ols
+from statsmodels.stats.anova import anova_lm
+
+Q3 = dataset11[dataset11['Country'].isin(Q1_2.index.values)]
+
+anova = ols('Happiness_Score~C(year)', Q3).fit() # C :강제로 범주형으로 바꿈
+
+anova_lm(anova)
+
+#                       df      sum_sq   mean_sq         F    PR(>F)
+# C(year) - 집단 간     2.0    0.011198  0.005599  0.004277  0.995732
+# Residual - 집단 내  435.0  569.472307  1.309132       NaN       NaN
+
+# 답
+# 0.0042
+
+# 사후 분석(다중비교) - 집단간 차이가 있을 경우 어떤 집단이 차이가 나는 지 확인
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
+
+Q3_out = pairwise_tukeyhsd(Q3['Happiness_Score'], Q3['year'])
+
+print(Q3_out)
+
+# ==================================================
+# group1 group2 meandiff p-adj  lower  upper  reject
+# --------------------------------------------------
+#   2015   2016  -0.0112   0.9 -0.3261 0.3038  False
+#   2015   2017   -0.001   0.9 -0.3159  0.314  False
+#   2016   2017   0.0102   0.9 -0.3048 0.3251  False
+# --------------------------------------------------
 
 
+# ====== 다른 풀이
+from scipy.stats import f_oneway
 
-
-
-
-
+f_oneway(Q1_2[2015].values, Q1_2[2016].values, Q1_2[2017].values)
+# F_onewayResult(statistic=0.004276725037689305, pvalue=0.9957324489944479)
 
 
 

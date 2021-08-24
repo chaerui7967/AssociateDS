@@ -596,7 +596,7 @@ ttest_ind(big, small, equal_var=True)
 
 from sklearn.linear_model import LinearRegression
 
-x_var['engine_power', 'age_in_days', 'km']
+x_var= ['engine_power', 'age_in_days', 'km']
 
 new_data = pd.DataFrame({
     'model':['pop'],
@@ -609,9 +609,10 @@ new_data = pd.DataFrame({
 
 lm = LinearRegression().fit(data1[x_var], data1['price'])
 
+lm.predict(new_data[x_var])
 
-
-
+# 답
+# 10469
 
 
 
