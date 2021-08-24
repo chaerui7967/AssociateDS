@@ -81,6 +81,10 @@ Q2.corr()['price'].abs().sort_values()
 
 # 답
 # sqft_living, yr_built
+q2_out = Q2.corr().iloc[1:, 0]
+
+q2_out.nlargest(1)
+q2_out.nsmallest(1)
 
 
 #%%
@@ -100,7 +104,7 @@ Q2.corr()['price'].abs().sort_values()
 # from statsmodels.formula.api import ols
 # =============================================================================
 
-Q3 = dataset6.drop(columns=['id', 'date', 'zipcode'], axis=1)
+Q3 = dataset6.drop(columns=['id', 'date', 'zipcode'])
 
 from statsmodels.api import OLS, add_constant
 
@@ -114,7 +118,23 @@ ols = OLS(y,xx).fit()
 ols.summary()
 
 # 답 
-# 14, 2
+# 13, 2
+
+
+# ==== 풀이
+from statsmodels.formula.api import ols
+
+x_var = Q3.columns.drop('price')
+
+form = 'price~'+'+'.join(x_var)
+
+ols1 = ols(form, data=Q3).fit()
+
+ols1.summary()
+
+len(x_var) # 변수 개수 : 15개
+sum(ols1.pvalues < 0.05) - 1 
+
 
 #%%
 
@@ -148,8 +168,13 @@ ols.summary()
 # import scipy.stats as stats
 # #3
 # from sklearn.linear_model import LogisticRegression
-# Solver = ‘liblinear’, random_state = 12
+# Solver = ‘liblinear’, random_state = 123
 # =============================================================================
+
+dataset7 = pd.read_csv('./Dataset/DataSet_07.csv')
+dataset7.columns
+dataset7.dtypes
+dataset7.shape
 
 
 #%%
@@ -162,11 +187,14 @@ ols.summary()
 # 자리에서 반올림하여 셋째 자리까지 기술하시오. (답안 예시) 0.123
 # =============================================================================
 
+Q1 = dataset7[['GRE', 'TOEFL', 'CGPA', 'Chance_of_Admit']]
 
+Q1.corr().iloc[3, :-1].nlargest(1)
 
-
-
-
+# 답
+# 0.873
+# === 풀이 동일
+Q1.corr().iloc[:-1, -1].max()
 
 
 #%%
@@ -181,13 +209,25 @@ ols.summary()
 # (답안 예시) 1.23
 # =============================================================================
 
+from scipy.stats import ttest_ind
 
+Q2 = dataset7.copy()
+ttest_ind(Q2.CGPA[Q2.GRE >= Q2.GRE.mean()], Q2.CGPA[Q2.GRE < Q2.GRE.mean()])
 
+# 답
+# 19.44
 
+# ====풀이
+GRE_avg = Q2.GRE.mean()
+Q2['GRE_gr'] = 'under'
+Q2.loc[Q2['GRE'] >= GRE_avg ,'GRE_gr'] = 'over'
 
+a = Q2[Q2['GRE_gr']=='over']['CGPA']
+b = Q2[Q2['GRE_gr']=='under']['CGPA']
 
+ttest_ind(a,b)
 
-
+# Ttest_indResult(statistic=19.443291692470982, pvalue=1.1127037052806161e-59)
 
 
 
@@ -205,11 +245,35 @@ ols.summary()
 # (답안 예시) abc, 0.12
 # =============================================================================
 
+from sklearn.linear_model import LogisticRegression
 
+Q3 = dataset7.drop(columns=['Serial_No'])
+Q3['Chance_of_Admit'] = np.where(Q3.Chance_of_Admit > 0.5,1,0)
 
+x = Q3.drop(columns='Chance_of_Admit')
+y = Q3['Chance_of_Admit']
+logi = LogisticRegression(random_state=123, solver='liblinear').fit(x,y)
 
+pd.DataFrame({'var' : x.columns.values,
+              'coef' : logi.coef_.reshape(-1)})
 
+# CGPA  1.978584
 
+# === 풀이
+Q3['ch_ad'] = np.where(Q3.Chance_of_Admit > 0.5, 1, 0)
+
+x1 = Q3.drop(columns = ['Chance_of_Admit','ch_ad'])
+y1 = Q3.ch_ad
+
+# Solver = ‘liblinear’, random_state = 123  문제에서 확인
+logit1 = LogisticRegression(random_state=123,
+                            solver='liblinear').fit(x1,y1)
+                            # C=100000).fit(x1,y1)
+
+pd.DataFrame({'var' : x1.columns.values,
+              'coef' : logit1.coef_.reshape(-1)})
+# 답
+# CGPA  1.978584
 
 #%%
 
@@ -240,6 +304,10 @@ ols.summary()
 # #3
 # from sklearn.linear_model import LinearRegression
 # =============================================================================
+
+
+dataset8 = pd.read_csv('./Dataset/DataSet_08.csv')
+
 
 #%%
 
@@ -279,15 +347,37 @@ ols.summary()
 # (답안 예시) ABC, 1.56
 # =============================================================================
 
+from sklearn.linear_model import LinearRegression
 
+Q3 = dataset8.copy()
 
+state_list = list(Q3.State.unique())
+# ['New York', 'California', 'Florida']
+x_var = ['RandD_Spend', 'Administration', 'Marketing_Spend']
 
+Q3_out = []
 
+for i in state_list:
+    temp = Q3[Q3.State == i]
+    
+    lm = LinearRegression().fit(temp[x_var], temp.Profit)
+    pred = lm.predict(temp[x_var])
+    mape = sum(abs(temp.Profit - pred) / temp.Profit) * 100/len(temp)
+    
+    Q3_out = Q3_out + [[i, mape]]
 
+# [['New York', 8.524247700724835],
+#  ['California', 15.227582003020185],
+#  ['Florida', 5.7067131001644915]]
 
+# 답
+# 'Florida', 5.71
 
-
-
+# ====== 풀이
+temp=dataset8[dataset8.State == 'New York']
+lm_NY = LinearRegression().fit(temp[x_var], temp.Profit)
+pred = lm_NY.predict(temp[x_var])
+mape = sum(abs(temp.Profit - pred) / temp.Profit) * 100/len(temp) # 반복
 
 
 #%%
@@ -433,6 +523,8 @@ ols.summary()
 # from sklearn.linear_model import LinearRegression
 # =============================================================================
 
+dataset10 = pd.read_csv('./Dataset/DataSet_10.csv')
+data1=dataset10.dropna(axis=1, how='all')
 
 #%%
 
@@ -445,14 +537,22 @@ ols.summary()
 # =============================================================================
 
 
+q1 = data1[data1.previous_owners == 1]
+q1_2 = q1[q1.engine_power == 51]
 
+len(data1)  # 1538
+len(q1)  # 1389
+len(q1_2)  # 1312
 
+q1_3 = pd.pivot_table(data=q1_2,
+                      index='model',
+                      values=['age_in_days', 'km'])
+q1_3['days'] = q1_3['km'] / q1_3['age_in_days']
 
+q1_3['days']['sport'] / q1_3['days']['lounge']
 
-
-
-
-
+# 답
+# 0.97
 
 
 
@@ -467,13 +567,20 @@ ols.summary()
 # (답안 예시) 0.23, Y
 # =============================================================================
 
+q2 = q1.copy()
 
+q2['km_per_day'] = q2['km'] / q2['age_in_days']
 
+big = q2[q2['model'] == 'lounge']['km_per_day']
+small = q2[q2['model'] == 'sport']['km_per_day']
 
+from scipy.stats import ttest_ind
 
+ttest_ind(big, small, equal_var=True)
+# Ttest_indResult(statistic=1.1025375913936746, pvalue=0.27047828249848516)
 
-
-
+# 답
+# 0.27, N
 
 
 #%%
@@ -487,7 +594,20 @@ ols.summary()
 # (답안 예시) 12345
 # =============================================================================
 
+from sklearn.linear_model import LinearRegression
 
+x_var['engine_power', 'age_in_days', 'km']
+
+new_data = pd.DataFrame({
+    'model':['pop'],
+    'engine_power': [51],
+    'age_in_days' : [400],
+    'km' : [9500],
+    'previous_owners' : [2]
+    })
+# new_data2 = np.array([[51,400,950]])
+
+lm = LinearRegression().fit(data1[x_var], data1['price'])
 
 
 
