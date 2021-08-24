@@ -571,6 +571,10 @@ for i in sub_list:
 
 Q3_out = pd.DataFrame(Q3_out, columns = ['sub', 'r2_score'])
 
+lm_PIG.coef_
+
+temp = Q3[Q3.SUBJECT == 'POULTRY']
+lm_POULTRY.predict(temp[['TIME']])
     
 #%%
 
