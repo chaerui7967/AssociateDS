@@ -555,6 +555,21 @@ mape = sum(abs(temp.KOR - pred) / temp.KOR) * 100 / len(temp)
 # 답
 # 5.783357902874552
 
+#%%
+# grobal 사용
+
+Q3_out=[]
+
+sub_list = Q3.SUBJECT.unique()
+
+for i in sub_list:
+    temp = Q3[Q3.SUBJECT == i]  # 입력변수는 2차원구조로 입력해야함
+    globals()['lm_'+str(i)] = LinearRegression().fit(temp[['TIME']], temp.KOR)  # Q3[''] 는 1차원,
+    # Q3[['']] 2차원
+    r2_Score = eval('lm_'+str(i)).score(temp[['TIME']], temp.KOR)
+    Q3_out = Q3_out + [[i,r2_Score]]
+
+Q3_out = pd.DataFrame(Q3_out, columns = ['sub', 'r2_score'])
 
     
 #%%
