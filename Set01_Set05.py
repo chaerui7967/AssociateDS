@@ -600,6 +600,17 @@ mape = sum(abs(temp.KOR - pred) / temp.KOR) * 100 / len(temp)
 # from sklearn.tree import export_graphviz
 # import pydot
 
+#%%
+
+import pandas as pd
+import numpy as np
+
+dataset5 = pd.read_csv('./Dataset/DataSet_05.csv', na_values = ['NA', '?', '', ' '])
+dataset5.columns
+dataset5.dtypes
+dataset5.shape
+dataset5.info()
+
 
 #%%
 
@@ -610,8 +621,10 @@ mape = sum(abs(temp.KOR - pred) / temp.KOR) * 100 / len(temp)
 # (String 타입 변수의 경우 White Space(Blank)를 결측으로 처리한다) (답안 예시) 123
 # =============================================================================
 
+dataset5.isna().sum().sum()
 
-
+# 답
+# 1166
 
 
 
@@ -624,8 +637,27 @@ mape = sum(abs(temp.KOR - pred) / temp.KOR) * 100 / len(temp)
 # (답안 예시) 0.2345, N
 # =============================================================================
 
+Q2 = dataset5.dropna()
 
+len(dataset5)
+len(Q2)
 
+# 범주형 끼리의 독립성 검정은 카이제곱검정
+# 카이제곱 검정은 빈도표가 필요
+
+Q2_tab = pd.crosstab(index=Q2.Gender,
+                     columns=Q2.Segmentation)
+
+from scipy.stats import chi2_contingency
+
+Q2_out = chi2_contingency(Q2_tab)
+
+# 답
+Q2_out[1] # 0.0031
+# H0 : 두 변수는 연관이 없다
+# H1 : 연관이 있다
+# pvalue가 유의수준 0.05보다 작으므로 귀무가설을 기각
+# Y
 
 
 #%%
@@ -648,5 +680,27 @@ mape = sum(abs(temp.KOR - pred) / temp.KOR) * 100 / len(temp)
 # (답안 예시) 0.12
 # =============================================================================
 
+Q3 = Q2[Q2.Segmentation.isin(['A','D'])]
+
+Q3.isna().sum()
+
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+
+train, test = train_test_split(Q3,
+                               test_size = 0.3,
+                               random_state = 123)
+train.columns
+x_var= ['Age_gr', 'Gender', 'Work_Experience', 'Family_Size',
+       'Ever_Married', 'Graduated', 'Spending_Score']
 
 
+dt = DecisionTreeClassifier(max_depth=7,
+                            random_state=123)
+
+dt.fit(train[x_var], train.Segmentation)
+pred = dt.predict(test[x_var])
+
+# 답
+dt.score(test[x_var], test.Segmentation)
+# 0.68
