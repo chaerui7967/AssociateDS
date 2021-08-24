@@ -157,6 +157,8 @@ f_oneway(Q1_2[2015].values, Q1_2[2016].values, Q1_2[2017].values)
 # =============================================================================
 # =============================================================================
 
+dataset12 = pd.read_csv('./Dataset/DataSet_12.csv')
+
 
 #%%
 
@@ -200,17 +202,28 @@ f_oneway(Q1_2[2015].values, Q1_2[2016].values, Q1_2[2017].values)
 # (참고)
 # from statsmodels.formula.api import ols
 
+var_list=dataset12.columns[dataset12.dtypes != 'object'].drop('Read_Book_per_Year')
 
+form = 'Read_Book_per_Year~' + '+'.join(var_list)
 
+from statsmodels.formula.api import ols
 
+ols1 = ols(form, data=dataset12).fit()
+ols1.summary()
 
+# Age                 0.7894 
+# 답 7.894
 
+Q3 = dataset12.copy()
+Q3.info()
+Q3.Education_Level.value_counts()
+Q3_1 = Q3[Q3.Education_Level != '고졸']
 
+ols2 = ols(form, data=Q3_1).fit()
+ols2.summary()
 
-
-
-
-
+# Age                 0.7975
+# 답 7.975
 
 
 
@@ -242,6 +255,8 @@ f_oneway(Q1_2[2015].values, Q1_2[2016].values, Q1_2[2017].values)
 # =============================================================================
 # =============================================================================
 
+dataset13 = pd.read_csv('./Dataset/DataSet_13_train.csv')
+
 
 #%%
 
@@ -251,9 +266,25 @@ f_oneway(Q1_2[2015].values, Q1_2[2016].values, Q1_2[2017].values)
 # - 상관계수는 반올림하여 소수점 둘째 자리까지 기술하시오. (답안 예시) 0.12
 # =============================================================================
 
+dataset13.gender.value_counts()
 
+Q1_m = dataset13[dataset13.gender == 'Male'][['experience', 'last_new_job']]
+Q1_f = dataset13[dataset13.gender == 'Female'][['experience', 'last_new_job']]
 
+Q1_m.corr()  # 0.411155
+Q1_f.corr()  # 0.451898
 
+# 답  0.45
+
+# ==== 풀이
+dataset13.groupby(['gender'])[['experience', 'last_new_job']].corr()
+
+#                      experience  last_new_job
+# gender                                       
+# Female experience      1.000000      0.451898
+#        last_new_job    0.451898      1.000000
+# Male   experience      1.000000      0.411155
+#        last_new_job    0.411155      1.000000
 
 
 #%%
@@ -268,11 +299,15 @@ f_oneway(Q1_2[2015].values, Q1_2[2016].values, Q1_2[2017].values)
 # - p-value는 반올림하여 소수점 둘째 자리까지 기술하시오. (답안 예시) 0.12
 # =============================================================================
 
+from scipy.stats import chi2_contingency
 
+df_q2 = dataset13.loc[(dataset13.major_discipline == 'STEM') &
+                      (dataset13.city_development_index > dataset13.city_development_index.quantile(q=0.85)), ]
 
-
-
-
+stat, p, dof, exp_v = \
+    chi2_contingency(pd.crosstab(df_q2['relevent_experience'], df_q2['target']))
+# 답 0.6379584714909265
+np.round(p,2) # 0.64
 
 
 
@@ -295,17 +330,23 @@ f_oneway(Q1_2[2015].values, Q1_2[2016].values, Q1_2[2017].values)
 # from sklearn.tree import DecisionTreeClassifier
 # random_state = 123
 
+var_list = dataset13.columns[dataset13.dtypes != 'object'].drop('target')
+x = dataset13[var_list]
+y = dataset13['target']
 
+from sklearn.tree import DecisionTreeClassifier
 
+dt = DecisionTreeClassifier(random_state = 123).fit(x,y)
 
+test = pd.read_csv('./Dataset/DataSet_13_test.csv')
+test_x = test[var_list]
 
+pred = dt.predict(test_x)
 
+dt.score(test_x, test['target'])
 
-
-
-
-
-
+# 답
+# 0.672
 
 
 
