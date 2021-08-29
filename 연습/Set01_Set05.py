@@ -31,9 +31,9 @@ Created on Sat Aug 21 12:53:16 2021
 
 
 import pandas as pd
-
 df1 = pd.read_csv('./DataSet_01.csv')
 df1.shape
+
 
 #%%
 
@@ -41,11 +41,10 @@ df1.shape
 # 1. 데이터 세트 내에 총 결측값의 개수는 몇 개인가? (답안 예시) 23
 # =============================================================================
 
+
 df1.isna().sum().sum()
 
-
-# 답  26
-
+# 답 26 
 
 
 #%%
@@ -59,11 +58,10 @@ df1.isna().sum().sum()
 
 df1.columns
 # ['TV', 'Radio', 'Social_Media', 'Influencer', 'Sales']
-
-round(df1.corr()['Sales'].sort_values(ascending = False)[1:].nlargest(1),4)
+df1.corr()['Sales'].sort_values(ascending = False)[1:].nlargest(1)
+# TV    0.999497
 
 # 답  0.9995
-
 
 #%%
 
@@ -76,42 +74,51 @@ round(df1.corr()['Sales'].sort_values(ascending = False)[1:].nlargest(1),4)
 # from sklearn.linear_model import LinearRegression 사용하시오.
 # =============================================================================
 
-# 풀이 1
-df1 = df1.dropna()
-
 from sklearn.linear_model import LinearRegression
 
-lm = LinearRegression(fit_intercept = True)
-lm.fit(df1.drop(columns = ['Influencer', 'Sales']), df1.Sales)
+df1 = df1.dropna()
 
-dir(lm)
-
+lm = LinearRegression(fit_intercept = True).fit(df1.drop(columns=['Influencer', 'Sales']), df1['Sales'])
 lm.coef_
+# [ 3.56256963, -0.00397039,  0.00496402]
+# 답 3.562, -0.003, 0.004
 
-# 답 --> [ 3.562, -0.003,  0.004]
-
-# 풀이 2
-
-from statsmodels.api import OLS, add_constant
-x= df1.drop(columns = ['Influencer', 'Sales'])
-x= add_constant(x)
-y= df1.Sales
-
-ols1 = OLS(y,x).fit()
-ols1.summary()
-# 2 --> [3.562, -.004, 0.005]
-
-
-# 풀이 3 
-
+# ols 사용
 from statsmodels.formula.api import ols
-var_list = df1.drop(columns = ['Influencer', 'Sales']).columns
+
+var_list = df1.drop(columns=['Influencer', 'Sales']).columns
+
 form = 'Sales~' + '+'.join(var_list)
 
-ols2 = ols(form, data = df1).fit()
+ols1 = ols(form, data = df1).fit()
+ols1.summary()
+
+#                    coef    std err          t      P>|t|      [0.025      0.975]
+# --------------------------------------------------------------------------------
+# Intercept       -0.1340      0.103     -1.303      0.193      -0.336       0.068
+# TV               3.5626      0.003   1051.118      0.000       3.556       3.569
+# Radio           -0.0040      0.010     -0.406      0.685      -0.023       0.015
+# Social_Media     0.0050      0.025      0.199      0.842      -0.044       0.054
+
+
+# OLS 사용
+from statsmodels.api import OLS, add_constant
+
+x = df1.drop(columns=['Influencer', 'Sales'])
+xx = add_constant(x)
+y = df1.Sales
+
+ols2 = OLS(y,xx).fit()
 ols2.summary()
 
-# 3 --> [3.562, -0.004, 0.005]
+# ================================================================================
+#                    coef    std err          t      P>|t|      [0.025      0.975]
+# --------------------------------------------------------------------------------
+# const           -0.1340      0.103     -1.303      0.193      -0.336       0.068
+# TV               3.5626      0.003   1051.118      0.000       3.556       3.569
+# Radio           -0.0040      0.010     -0.406      0.685      -0.023       0.015
+# Social_Media     0.0050      0.025      0.199      0.842      -0.044       0.054
+
 
 
 #%%
