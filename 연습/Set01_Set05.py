@@ -140,6 +140,11 @@ ols2.summary()
 # =============================================================================
 # =============================================================================
 
+import pandas as pd
+
+df2 = pd.read_csv('./DataSet_02.csv')
+df2.shape
+
 
 #%%
 
@@ -149,7 +154,25 @@ ols2.summary()
 # 자리까지 기술하시오. (답안 예시) 0.123
 # =============================================================================
 
-# 답
+df2.columns
+# ['Age', 'Sex', 'BP', 'Cholesterol', 'Na_to_K', 'Drug']
+
+# 크로스탭
+q1 = pd.crosstab(index = [df2.Sex, df2.BP],
+                 columns = df2.Cholesterol,
+                 normalize = True)
+q1
+# 0.105
+
+# 피벗테이블
+q1_pi = pd.pivot_table(index = ['Sex', 'BP'],
+                       columns = 'Cholesterol',
+                       data = df2,
+                       values = 'Drug',
+                       aggfunc = 'count')
+q1_pi/len(df2)
+
+# 답 0.105
 
 
 #%%
@@ -169,7 +192,44 @@ ols2.summary()
 # (답안 예시) 3, 1.23456
 # =============================================================================
 
-# 답
+import numpy as np
+
+df2['Age_gr'] = np.where(df2['Age']<20,'10',
+                         np.where(df2['Age']<30,'20',
+                                  np.where(df2['Age']<40,'30',
+                                           np.where(df2['Age']<50,'40',
+                                                    np.where(df2['Age']<60,'50','60')))))
+df2['Na_K_gr'] = np.where(df2['Na_to_K']<10,'Lv1',
+                          np.where(df2['Na_to_K']<20,'Lv2',
+                                   np.where(df2['Na_to_K']<30,'Lv3','Lv4')))
+# 독립성 검정
+import scipy.stats as sc
+
+age = pd.crosstab(df2.Age_gr, df2.Na_K_gr)
+age_t = sc.chi2_contingency(age)
+print(age_t)
+
+temp = []
+df2.columns
+var_list = ['Sex', 'BP', 'Cholesterol', 'Age_gr', 'Na_K_gr']
+
+for i in var_list:
+    te = pd.crosstab(df2[i], df2['Drug'])
+    te_t = sc.chi2_contingency(te)
+    temp = temp + [[i, te_t[1]]]
+
+df2_temp = pd.DataFrame(temp)
+df2_temp.columns = ['var', 'p_values']
+
+
+df2_temp2 = df2_temp[df2_temp.p_values < 0.05]
+df2_temp2
+
+len(df2_temp2)
+df2_temp2.p_values.sort_values().tail(1)
+df2_temp2.sort_values(by='p_values').tail(1)
+
+# 답 4 ,0.00070
 
 #%%
 
@@ -185,7 +245,24 @@ ols2.summary()
 # 12.345
 # =============================================================================
 
-# 답
+import numpy as np
+
+q3 = df2.copy()
+q3['Sex_cd'] = np.where(q3.Sex == 'M',0,1)
+q3['BP_cd'] = np.where(q3.BP == 'LOW', 0,
+                       np.where(q3.BP =='NORMAL',1,2))
+q3['Ch_cd'] = np.where(q3.Cholesterol == 'NORMAL',0,1)
+
+var_list = ['Age', 'Na_to_K', 'Sex_cd', 'BP_cd','Ch_cd']
+
+from sklearn.tree import DecisionTreeClassifier, plot_tree, export_text
+
+dt = DecisionTreeClassifier().fit(q3[var_list],q3['Drug'])
+
+plot_tree(dt, feature_names= var_list, class_names = q3.Drug.unique())
+export_text(dt, feature_names= var_list, decimals=3)
+
+# 답 Na_to_K <= 14.829
 
 
 
