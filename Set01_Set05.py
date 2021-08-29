@@ -79,6 +79,7 @@ print(np.round(df[['TV', 'Radio', 'Social_Media', 'Sales']].corr().abs()['Sales'
 # 기술하시오. 
 # - 분석 시 결측치가 포함된 행은 제거한 후 진행하며, 회귀계수는 소수점 넷째 자리
 # 이하는 버리고 소수점 셋째 자리까지 기술하시오. (답안 예시) 0.123
+# from sklearn.linear_model import LinearRegression 사용하시오.
 # =============================================================================
 
 from sklearn.linear_model import LinearRegression
