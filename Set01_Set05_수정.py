@@ -4,10 +4,10 @@ Created on Sat Aug 21 12:53:16 2021
 
 @author: Administrator
 """
-## 함수 정보 보기 ctrl+i
+
 #%%
 
-# ================== ===========================================================
+# =============================================================================
 # =============================================================================
 # # 문제 01 유형(DataSet_01.csv 이용)
 #
@@ -27,7 +27,10 @@ Created on Sat Aug 21 12:53:16 2021
 # SALES / 매출액 / Double
 # =============================================================================
 # =============================================================================
-# pandas, scipy, numpy, sklearn, statsmodels
+
+import pandas as pd
+
+data1=pd.read_csv('Dataset_01.csv')
 
 
 #%%
@@ -36,11 +39,12 @@ Created on Sat Aug 21 12:53:16 2021
 # 1. 데이터 세트 내에 총 결측값의 개수는 몇 개인가? (답안 예시) 23
 # =============================================================================
 
+data1.isna().sum().sum()
 
+# (정답) 26
 
-
-# 답 26 
-
+# 결측치 포함된 행의 수 찾기
+data1.isna().any(axis=1).sum()
 
 #%%
 
@@ -50,10 +54,22 @@ Created on Sat Aug 21 12:53:16 2021
 # - 매출액과 가장 강한 상관관계를 가지고 있는 채널의 상관계수를 소수점 5번째
 # 자리에서 반올림하여 소수점 넷째 자리까지 기술하시오. (답안 예시) 0.1234
 # =============================================================================
+data1.columns
+# ['TV', 'Radio', 'Social_Media', 'Influencer', 'Sales'],
 
+# (1) 변수 체크
+x_var=['TV', 'Radio', 'Social_Media','Sales']
 
+# (2) 상관계수
+q2=data1[x_var].corr()
 
-# 답  0.9995
+# (3) 매출액과 가장 강한 상관관계: 기준 변수 확인
+q2.drop('Sales')['Sales'].abs().max() #  0.999497444941335
+q2.drop('Sales')['Sales'].abs().nlargest(1)  # TV    0.999497
+q2.drop('Sales')['Sales'].abs().argmax()  # 0, 위치번호 리턴
+q2.drop('Sales')['Sales'].abs().idxmax() # 'TV', 인덱스 리턴
+
+# (정답) 0.999497444941335  -> 0.9995
 
 #%%
 
@@ -63,9 +79,30 @@ Created on Sat Aug 21 12:53:16 2021
 # 기술하시오. 
 # - 분석 시 결측치가 포함된 행은 제거한 후 진행하며, 회귀계수는 소수점 넷째 자리
 # 이하는 버리고 소수점 셋째 자리까지 기술하시오. (답안 예시) 0.123
-# from sklearn.linear_model import LinearRegression 사용하시오.
 # =============================================================================
 
+# (1) 입력, 출력 변수 확인
+x_var=['TV', 'Radio', 'Social_Media']
+
+# (2) 회귀 분석, 함수 지정이 있는지 확인
+from sklearn.linear_model import LinearRegression  # 사용
+# !pip install statsmodels
+from statsmodels.formula.api import ols
+from statsmodels.api import OLS, add_constant
+
+# (3) 전처리 확인: 결측치 제거
+q3=data1.dropna()
+
+# (4) 모델 생성
+lm=LinearRegression().fit(q3[x_var], q3.Sales)
+
+# (5) 답과 관련된 통계량 체크 리턴
+# - 회귀계수를 큰 것에서부터 작은 것 순으로
+
+lm.coef_
+# [ 3.56256963, -0.00397039,  0.00496402]
+
+# (정답) 3.562, 0.004, -0.003
 
 
 #%%
@@ -87,7 +124,11 @@ Created on Sat Aug 21 12:53:16 2021
 # =============================================================================
 # =============================================================================
 
+import pandas as pd
 
+data2=pd.read_csv('Dataset_02.csv')
+data2.columns
+# ['Age', 'Sex', 'BP', 'Cholesterol', 'Na_to_K', 'Drug']
 
 #%%
 
@@ -97,7 +138,13 @@ Created on Sat Aug 21 12:53:16 2021
 # 자리까지 기술하시오. (답안 예시) 0.123
 # =============================================================================
 
+# (1) 조건 변수 확인
 
+q1=pd.crosstab(index=[data2.Sex, data2.BP],
+               columns=data2.Cholesterol,
+               normalize=True)
+
+# (정답) 0.105
 
 
 #%%
@@ -118,6 +165,76 @@ Created on Sat Aug 21 12:53:16 2021
 # =============================================================================
 
 
+q2=data2
+# ['Age', 'Sex', 'BP', 'Cholesterol', 'Na_to_K', 'Drug']
+
+# (1) 변수 생성
+# Age_gr 컬럼을 만들고, Age가 20 미만은 ‘10’, 20부터 30 미만은 ‘20’, 30부터 40 미만은
+# ‘30’, 40부터 50 미만은 ‘40’, 50부터 60 미만은 ‘50’, 60이상은 ‘60’으로 변환
+
+import numpy as np
+
+q2['Age_gr']=np.where(q2.Age < 20, 10, 
+               np.where(q2.Age < 30, 20, 
+                  np.where(q2.Age < 40, 30,
+                     np.where(q2.Age < 50, 40,
+                        np.where(q2.Age < 60, 50,  60)))))
+
+# Na_K_gr 컬럼을 만들고 Na_to_K 값이 10이하는 ‘Lv1’, 20이하는 ‘Lv2’, 
+# 30이하는 ‘Lv3’, 30 초과는 ‘Lv4’로 변환
+q2['Na_K_gr']=np.where(q2.Na_to_K <= 10, 'Lv1',
+                np.where(q2.Na_to_K <= 20, 'Lv2',
+                   np.where(q2.Na_to_K <= 30, 'Lv3' , 'Lv4')))
+
+# (2) 데이터 타입: 문자열
+# Sex, BP, Cholesterol, Age_gr, Na_K_gr이 Drug 변수와 영향이 있는지
+
+# (3) 둘씩 독립성 검정: 데이터는 범주형이므로 카이스퀘어 검정 진행
+
+# 시험에서 사용되는 패키지 종류
+# pandas, numpy, scipy, sklearn, statsmodels
+
+from scipy.stats import chi2_contingency  # 카이스퀘어 검정 함수
+# 입력 데이터가 빈도표로 구성
+
+# (a) 입력표 작성
+tab=pd.crosstab(index=q2['Sex'], columns=q2['Drug'])
+
+# (b) 카이스퀘어 검정
+
+chi2_contingency(tab)
+# (2.119248418109203,  # 카이스퀘어 통계량
+#  0.7138369773987128, # p-value(유의확률)
+#  4,   # 자유도
+#  array([[43.68, 11.04,  7.68,  7.68, 25.92],
+#         [47.32, 11.96,  8.32,  8.32, 28.08]]))  # 기대빈도(E)
+
+var_list=['Sex', 'BP', 'Cholesterol', 'Age_gr', 'Na_K_gr']
+
+q2_out=[]
+for i in var_list:
+    tab=pd.crosstab(index=q2[i], columns=q2['Drug'])
+    pvalue=chi2_contingency(tab)[1]
+    q2_out=q2_out+[[i, pvalue]]
+
+# (4) 각 결과를 종합, 연관성 있는 변수 수 파악
+q2_out=pd.DataFrame(q2_out, columns=['var','pvalue'])
+
+# H0(귀무가설): 서로독립이다.
+# H1(대립가설): 서로독립이 아니다.
+# 판정 기준:
+# - 유의수준(0.05, 0.01)기준으로 p-value가 유의수준보다 작으면 귀무가설 기각 
+
+(q2_out.pvalue < 0.05).sum()
+
+# Drug 연관성 있는 변수 수: 4
+ 
+# (5) 연관성이 있는 변수 중에서 가장 큰 p-value
+q2_out[q2_out.pvalue < 0.05]['pvalue'].max()
+# 0.0007010113024729462
+
+# (정답) 4, 0.00070
+
 
 #%%
 
@@ -133,7 +250,30 @@ Created on Sat Aug 21 12:53:16 2021
 # 12.345
 # =============================================================================
 
+# (1) 변수변환 (범주형->수치형)
 
+q3=data2.copy()
+
+q3['Sex_cd']=np.where(q3.Sex=='M', 0, 1)
+q3['BP_cd']=np.where(q3.BP=='LOW', 0, np.where(q3.BP=='NORMAL', 1, 2))
+q3['Ch_cd']=np.where(q3.Cholesterol=='NORMAL', 0, 1)
+
+# (2) 의사결정나무 모델 적용 : 입력/출력 변수 확인 포함
+#입력: Age, Na_to_K, Sex_cd, BP_cd, Ch_cd를 Feature로, 출력: Drug을 Label
+from sklearn.tree import DecisionTreeClassifier, export_text, plot_tree
+
+x_var=['Age', 'Na_to_K', 'Sex_cd', 'BP_cd', 'Ch_cd']
+
+dt=DecisionTreeClassifier().fit(q3[x_var], q3.Drug)
+
+# (3) Root Node의 split feature와 split value 찾기
+export_text(dt, feature_names=x_var)
+plot_tree(dt, max_depth=2, 
+          feature_names=x_var,
+          class_names=q3.Drug.unique(),
+          precision=3)
+
+# (정답) Na_to_K, 14.83
 
 
 
@@ -163,6 +303,8 @@ Created on Sat Aug 21 12:53:16 2021
 # =============================================================================
 # =============================================================================
 
+import pandas as pd
+data3=pd.read_csv('Dataset_03.csv')
 
 #%%
 
@@ -172,23 +314,87 @@ Created on Sat Aug 21 12:53:16 2021
 # 정의할 때, 이상치에 해당하는 데이터는 몇 개인가? (답안 예시) 10
 # =============================================================================
 
-# 답
+q1=data3.copy()
 
+# (1) 새로운 변수 유무 확인 : 새로운 변수 생성하라는 의미
+q1['forehead_ratio']=q1['forehead_width_cm'] / q1['forehead_height_cm']
 
+# (2) 기준값을 생성: 새로운 변수 기준
+# 평균(mean()), 표준편차(std()), 3*표준편차 
 
+xbar=q1['forehead_ratio'].mean()
+std=q1['forehead_ratio'].std()
+
+# (3) 평균으로부터 3 표준편차 밖의 경우(상한[UU], 하한[LL])
+LL=xbar-(3*std)
+UU=xbar+(3*std)
+
+# (4) 상한/하한 기준으로 비교해서 이상치 체크
+# 연산자 우선순위 고려(괄호 사용)
+((q1['forehead_ratio'] < LL) | (q1['forehead_ratio'] > UU)).sum()
+
+#(정답) 3
+q1[(q1['forehead_ratio'] < LL) | (q1['forehead_ratio'] > UU)]
 #%%
 
 # =============================================================================
 # 2.성별에 따라 forehead_ratio 평균에 차이가 있는지 적절한 통계 검정을 수행하시오.
-# - 검정은 이분산을 가정하고 수행한다. 
+# - 검정은 이분산을 가정하고 수행한다.
 # - 검정통계량의 추정치는 절대값을 취한 후 소수점 셋째 자리까지 반올림하여
 # 기술하시오.
 # - 신뢰수준 99%에서 양측 검정을 수행하고 결과는 귀무가설 기각의 경우 Y로, 그렇지
 # 않을 경우 N으로 답하시오. (답안 예시) 1.234, Y
 # =============================================================================
 
-# 답
+# (1) 그룹변수, 수치형변수(y) 존재하는지 체크 
+# => 그룹변수의 레이블 수 확인(2개이하 ttest, 2개이상 ANOVA)
+# (분석적용) ttest
 
+from scipy.stats import ttest_1samp, ttest_ind, ttest_rel, bartlett
+
+# =============================================================================
+# X: 범주형, Y : 범주형 => 카이스퀘어 검정
+# X: 범주형, Y : 수치형 
+# => X: 범주형 그룹 수 2 개만 사용(2개 이하) ttest
+# => X: 범주형 그룹 수 3 개이상인 경우 사용 ANOVA
+# =============================================================================
+
+# (2) 적용 시 등분산 유무 체크 : 등분산 검정 진행 유무 확인
+# bartlett : 등분산 검정/이분산 검정
+
+# - (조건) 검정은 이분산을 가정하고 수행
+q1.columns
+# ['long_hair', 'forehead_width_cm', 'forehead_height_cm', 'nose_wide',
+#        'nose_long', 'lips_thin', 'distance_nose_to_lip_long', 'gender',
+#        'forehead_ratio']
+q1.gender.unique()
+
+g_m = q1[q1.gender=='Male']['forehead_ratio']
+g_f = q1[q1.gender=='Female']['forehead_ratio']
+
+# (a) 등분산 검정
+bartlett(g_m, g_f)
+# H0:등분산이다 vs H1:등분산이 아니다(이분산)
+# BartlettResult(statistic=213.42228096491922, 
+#                pvalue=2.4617792693952707e-48)
+# (등분산검정 결론) 유의수준 0.05보다 p-value 작으므로 귀무가설 기각 => 이분산
+
+# (b)
+q2_out=ttest_ind(g_m, g_f, equal_var=False)
+# Ttest_indResult(statistic=2.9994984197511543, 
+#                 pvalue=0.0027186702390657176)
+
+dir(q2_out)
+# 검정통계량의 추정치는 절대값을 취한 후 소수점 셋째 자리까지 반올림하여 기술
+q2_out.statistic # 2.9994984197511543
+
+# 신뢰수준 99%에서 양측 검정을 수행하고 결과는 귀무가설 기각의 경우 Y로, 그렇지
+# 않을 경우 N으로 답
+# (결론) 유의수준 0.01보다 p-value 작으므로 귀무가설 기각 
+#   => 두집단 간의 평균이 다르다
+q2_out.pvalue < 0.01
+
+# (정답) 2.999, Y
 
 #%%
 
@@ -212,10 +418,35 @@ Created on Sat Aug 21 12:53:16 2021
 # train_test_split 의 random_state = 123
 # =============================================================================
 
+# (1) 학습-테스트 데이터셋 분리
+from sklearn.model_selection import train_test_split
+
+train, test=\
+train_test_split(data3, test_size=0.3,
+                 random_state=123)
+
+train.columns
+# (2) 입력-출력 변수 구분
+x_var=train.columns[train.dtypes != 'object']
+
+# (3) 로지스틱 모델 생성
+from sklearn.linear_model import LogisticRegression
+
+logit=LogisticRegression().fit(train[x_var], train.gender)
 
 
-# 답
+# (4) 생성된 모델에 테스트 데이터셋 넣고 평가: Precision, 대상: Male
 
+pred=logit.predict(test[x_var])
+logit.predict_proba(test[x_var])
+
+from sklearn.metrics import classification_report, precision_score
+
+print(classification_report(test.gender, pred))
+precision_score(test.gender, pred, pos_label='Male')
+
+
+# (정답) 0.9596354166666666 -> 0.96
 
 #%%
 
@@ -246,6 +477,9 @@ Created on Sat Aug 21 12:53:16 2021
 # #3
 # from sklearn.linear_model import LinearRegression
 
+import pandas as pd
+
+data4=pd.read_csv('Dataset_04.csv')
 
 #%%
 
@@ -257,10 +491,17 @@ Created on Sat Aug 21 12:53:16 2021
 # 상관계수를 소수점 셋째 자리에서 반올림하여 소수점 둘째 자리까지만 기술하시오. 
 # (답안 예시) 0.55
 # =============================================================================
+data4.columns
+# ['LOCATION', 'SUBJECT', 'TIME', 'Value']
+q1=data4[data4.LOCATION == 'KOR'][['TIME', 'Value']]
 
-# 답
+q1_tab=pd.pivot_table(q1, index='TIME',
+                      values='Value',
+                      aggfunc='sum').reset_index()
 
+q1_tab.corr().loc['TIME', 'Value']
 
+# (정답) 0.9601244896033334 -> 0.96
 
 #%%
 
@@ -272,9 +513,41 @@ Created on Sat Aug 21 12:53:16 2021
 # 적으시오. (알파벳 순서) (답안 예시) BEEF, PIG, POULTRY, SHEEP
 # =============================================================================
 
-# 답
+# (1) 한국과 일본 데이터 필터링
+
+q2=data4[data4.LOCATION.isin(['KOR', 'JPN'])]
+
+# (2) 육류 종류 추출
+# ['LOCATION', 'SUBJECT', 'TIME', 'Value']
+sub_list=q2.SUBJECT.unique()
+
+# (3) 종류별로 대응인 ttest 데이터 순서를 맞추어야 함
+
+temp=q2[q2.SUBJECT == 'BEEF']
+tab=pd.pivot_table(temp, index='TIME', 
+                   columns='LOCATION',
+                   values='Value').dropna()
 
 
+# (4) 육류 종류별로 대응인 ttest
+from scipy.stats import ttest_rel
+ttest_rel(tab['KOR'], tab['JPN'])
+
+# (5) 소비량 차이가 없는 것으로 판단할 수 있는 육류 종류를 모두 적기
+
+q2_out=[]
+for i in sub_list:
+    temp=q2[q2.SUBJECT == i]
+    tab=pd.pivot_table(temp, index='TIME', 
+                   columns='LOCATION',
+                   values='Value').dropna()
+    pvalue=ttest_rel(tab['KOR'], tab['JPN']).pvalue
+    q2_out=q2_out+[[i, pvalue]]
+    
+q2_out=pd.DataFrame(q2_out, columns=['sub', 'pvalue'])
+q2_out.pvalue >= 0.05
+
+# (정답) POULTRY 
 
 #%%
 
@@ -287,13 +560,67 @@ Created on Sat Aug 21 12:53:16 2021
 # 
 # =============================================================================
 
-# 답
+
+# (1) 한국 데이터 필터링
+
+q3=data4[data4.LOCATION =='KOR']
 
 
-#%%
-# grobal 사용
+# (2) 육류 종류(그룹)별로 회귀분석 설계
+# - 결정계수 추출
+# - 결정계수 비교: 가장 큰 결정계수를 가지고 있는 육류 종류 찾기
 
-    
+# (a) 육류 종류 목록 추출
+q3.columns
+# ['LOCATION', 'SUBJECT', 'TIME', 'Value']
+from sklearn.linear_model import LinearRegression
+
+sub_list=q3.SUBJECT.unique()
+# ['BEEF', 'PIG', 'POULTRY', 'SHEEP']
+
+# 
+q3_out=[]
+for i in sub_list:
+    temp=q3[q3.SUBJECT == i]
+    lm=LinearRegression().fit(temp[['TIME']], temp['Value'])
+    r2_score=lm.score(temp[['TIME']], temp['Value'])
+    pred=lm.predict(temp[['TIME']])
+    # MAPE = Σ ( | y - y ̂ | / y ) * 100/n 
+    mape=(abs(temp['Value'] - pred) / temp['Value']).sum() * 100 / len(temp)
+
+    q3_out.append([i, r2_score, mape])
+
+# (3) MAPE 학습 오차(성능평가지표)
+q3_out=pd.DataFrame(q3_out, columns=['sub', 'r2', 'mape'])
+q3_out.sort_values('r2', ascending=False).head(1)
+
+# (정답) POULTRY  0.951498  5.783358 -> 5.78
+
+# (차원 변경 참조)
+temp['TIME'].shape # (36,)
+temp[['TIME']].shape # (36, 1)
+temp[['TIME']].values.reshape(-1,1)
+
+
+# (참고) - 육류종류별 모델 생성해서 재사용하기
+q3_out2=[]
+for i in sub_list:
+    temp=q3[q3.SUBJECT == i]
+    globals()['lm_'+str(i)]=LinearRegression().fit(temp[['TIME']], temp['Value'])
+    r2_score=eval('lm_'+str(i)).score(temp[['TIME']], temp['Value'])
+    pred=eval('lm_'+str(i)).predict(temp[['TIME']])
+    # MAPE = Σ ( | y - y ̂ | / y ) * 100/n 
+    mape=(abs(temp['Value'] - pred) / temp['Value']).sum() * 100 / len(temp)
+
+    q3_out2.append([i, r2_score, mape])
+
+q3_out2=pd.DataFrame(q3_out2, columns=['sub', 'r2', 'mape'])
+q3_out2.sort_values('r2', ascending=False).head(1)
+
+temp=q3[q3.SUBJECT == 'BEEF']
+lm_BEEF.predict(temp[['TIME']])
+
+
 #%%
 
 # =============================================================================
@@ -339,6 +666,8 @@ Created on Sat Aug 21 12:53:16 2021
 
 #%%
 
+import pandas as pd
+data5=pd.read_csv('Dataset_05.csv', na_values=['?', 'NA', '', ' '])
 
 
 #%%
@@ -350,10 +679,10 @@ Created on Sat Aug 21 12:53:16 2021
 # (String 타입 변수의 경우 White Space(Blank)를 결측으로 처리한다) (답안 예시) 123
 # =============================================================================
 
-# 답
+data5.info()
+data5.isnull().sum().sum()
 
-
-
+# (정답) 1166
 
 #%%
 
@@ -364,9 +693,21 @@ Created on Sat Aug 21 12:53:16 2021
 # (답안 예시) 0.2345, N
 # =============================================================================
 
-# 답
+q2=data5.dropna()
 
+q2.columns
+# ['ID', 'Age', 'Age_gr', 'Gender', 'Work_Experience', 'Family_Size',
+#        'Ever_Married', 'Graduated', 'Profession', 'Spending_Score', 'Var_1',
+#        'Segmentation']
+q2_tab=pd.crosstab(index=q2.Gender, columns=q2.Segmentation)
 
+from scipy.stats import chi2_contingency
+
+q2_out=chi2_contingency(q2_tab)
+
+round(q2_out[1],4) < 0.05
+
+# (정답) 0.0031, Y
 
 #%%
 
@@ -388,7 +729,39 @@ Created on Sat Aug 21 12:53:16 2021
 # (답안 예시) 0.12
 # =============================================================================
 
-# 답
+# (1) 결측치 제거
+q3=data5.dropna()
+
+# (2) Segmentation 값이 'A' 'D' 인 데이터 필터링
+q3=q3[q3.Segmentation.isin(['A','D'])]
+
+# (3) Train대 Test 7대3으로 데이터를 분리 (Seed = 123)
+from sklearn.model_selection import train_test_split
+
+train,test=train_test_split(q3, test_size=0.3, random_state=123)
+
+
+# (4) 의사결정나무 작성
+# Feature: Age_gr, Gender, Work_Experience, Family_Size, 
+#             Ever_Married, Graduated, Spending_Score
+# • Label : Segmentation
+# • Parameter : Gini / Max Depth = 7 / Seed = 123
+
+x_var=['Age_gr', 'Gender', 'Work_Experience', 'Family_Size', 
+       'Ever_Married', 'Graduated', 'Spending_Score']
+
+from sklearn.tree import DecisionTreeClassifier
+
+dt=DecisionTreeClassifier(max_depth=7, random_state=123)
+dt.fit(train[x_var], train['Segmentation'])
+
+# (5) Test 데이터로 평가, 정확도(Accuracy)를 소수점 셋째 자리 이하는 버리고 소수점 둘째자리까지
+dt.score(test[x_var], test['Segmentation'])
+
+# 0.6807116104868914 -> 0.68
+
+
+
 
 
 
