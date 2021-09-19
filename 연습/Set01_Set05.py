@@ -29,6 +29,10 @@ Created on Sat Aug 21 12:53:16 2021
 # =============================================================================
 # pandas, scipy, numpy, sklearn, statsmodels
 
+import pandas as pd
+import numpy as np
+
+df1 = pd.read_csv('DataSet_01.csv')
 
 #%%
 
