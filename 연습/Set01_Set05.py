@@ -380,14 +380,12 @@ df4 = pd.read_csv('C:/Users/j/AssociateDS/Dataset/DataSet_04.csv')
 
 q1 = df4[df4['LOCATION'] == 'KOR']
 
-pt = pd.pivot_table(q1, index= 'TIME',
-                    values='Value',
-                    aggfunc='sum').reset_index()
-pt.corr()
+tab = pd.pivot_table(q1, index='TIME',
+                     values= 'Value',
+                     aggfunc='sum').reset_index()
+tab.corr()
 
 # 답  0.96
-
-
 
 #%%
 
@@ -399,22 +397,21 @@ pt.corr()
 # 적으시오. (알파벳 순서) (답안 예시) BEEF, PIG, POULTRY, SHEEP
 # =============================================================================
 
-q2 = df4[df4['LOCATION'].isin(['KOR','JPN'])]
-s_list = q2.SUBJECT.unique()
+q2 = df4[df4['LOCATION'].isin(['KOR', 'JPN'])]
 
 from scipy.stats import ttest_rel
 
+s = q2['SUBJECT'].unique()
 q2_out = []
-for i in s_list:
+for i in s:
     temp = q2[q2.SUBJECT == i]
-    pt = pd.pivot_table(temp, index='TIME', columns='LOCATION',
-                        values='Value').dropna()
-    result = ttest_rel(pt['KOR'],pt['JPN']).pvalue
-    q2_out = q2_out + [[i,result]]
+    tab = pd.pivot_table(temp, index='TIME', columns= 'LOCATION',
+                         values='Value').dropna()
+    p = ttest_rel(tab['KOR'], tab['JPN']).pvalue
+    q2_out = q2_out +[[i,p]]
 
-q2_out = pd.DataFrame(q2_out, columns=['x','p'])
-
-q2_out[q2_out.p > 0.05]
+q2_out = pd.DataFrame(q2_out, columns=['x','pvalue'])
+q2_out[q2_out.pvalue >= 0.05]
 
 
 # 답 POULTRY
@@ -430,25 +427,24 @@ q2_out[q2_out.p > 0.05]
 # 
 # =============================================================================
 
-q3 = df4[df4['LOCATION'] == 'KOR']
-
-s_l = q3.SUBJECT.unique()
+q4 = df4[df4.LOCATION == 'KOR']
 
 from sklearn.linear_model import LinearRegression
-q3_out = []
+s = q4.SUBJECT.unique()
 
-for i in s_l:
-    temp = q3[q3.SUBJECT == i]
-    lm = LinearRegression().fit(temp[['TIME']], temp['Value'])
-    r2 = lm.score(temp[['TIME']], temp['Value'])
-    pred = lm.predict(temp[['TIME']])
-    mape = (abs(temp['Value'] - pred)/ temp['Value']).sum() * 100 / len(temp)
+q4_out =[]
 
-    q3_out = q3_out + [[i, r2, mape]]
+for i in s:
+    temp = q4[q4.SUBJECT == i]
+    lr = LinearRegression().fit(temp[['TIME']],temp['Value'])
+    pred = lr.predict(temp[['TIME']])
+    r2 = lr.score(temp[['TIME']], temp['Value'])
+    mape = (abs(temp['Value'] - pred)/temp['Value']).sum() * 100 / len(temp)
+    q4_out.append([i, r2, mape])
 
-q3_out = pd.DataFrame(q3_out, columns=['x','r2','p'])
+q4_out = pd.DataFrame(q4_out, columns=['x', 'r2', 'mape'])
 
-q3_out.sort_values('r2', ascending=False).head(1)
+q4_out.sort_values(by='r2', ascending=False).head(1)
 
 # 답 5.78
 
@@ -501,7 +497,10 @@ q3_out.sort_values('r2', ascending=False).head(1)
 # import pydot
 
 #%%
+import pandas as pd
+import numpy as np
 
+df5 = pd.read_csv('C:/Users/j/AssociateDS/Dataset/DataSet_05.csv', na_values=['?','NA', ' ',''])
 
 
 #%%
@@ -513,10 +512,12 @@ q3_out.sort_values('r2', ascending=False).head(1)
 # (String 타입 변수의 경우 White Space(Blank)를 결측으로 처리한다) (답안 예시) 123
 # =============================================================================
 
-# 답
+df5.info()
+df5.isna().sum().sum()
 
 
 
+# 답 1166
 
 #%%
 
@@ -527,9 +528,19 @@ q3_out.sort_values('r2', ascending=False).head(1)
 # (답안 예시) 0.2345, N
 # =============================================================================
 
-# 답
+q2 = df5.copy()
+q2 = q2.dropna()
 
+q2.columns
+q2.Segmentation.unique()
 
+tab = pd.crosstab(index=q2.Gender ,columns=q2.Segmentation)
+
+from scipy.stats import chi2_contingency
+
+chi2_contingency(tab) # 0.003125001283622576
+
+# 답  0.0031, Y
 
 #%%
 
@@ -551,7 +562,23 @@ q3_out.sort_values('r2', ascending=False).head(1)
 # (답안 예시) 0.12
 # =============================================================================
 
-# 답
+q3 = df5[df5['Segmentation'].isin(['A','D'])]
+
+q3 = q3.dropna()
+
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score
+
+train, test = train_test_split(q3, test_size=0.3, random_state=123)
+x_var = ['Age_gr', 'Gender', 'Work_Experience', 'Family_Size', 'Ever_Married', 'Graduated', 'Spending_Score']
+
+dt = DecisionTreeClassifier(max_depth=7,random_state=123)
+dt.fit(train[x_var], train['Segmentation'])
+dt.score(test[x_var], test['Segmentation'])
+accuracy_score(test['Segmentation'], dt.predict(test[x_var]))
+
+# 답 0.68
 
 
 
