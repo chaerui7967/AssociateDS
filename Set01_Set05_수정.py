@@ -273,7 +273,7 @@ plot_tree(dt, max_depth=2,
           class_names=q3.Drug.unique(),
           precision=3)
 
-# (정답) Na_to_K, 14.83
+# (정답) Na_to_K, 14.829
 
 
 
