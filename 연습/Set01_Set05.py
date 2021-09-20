@@ -362,6 +362,10 @@ print(classification_report(test['gender'], pred))
 # #3
 # from sklearn.linear_model import LinearRegression
 
+import pandas as pd
+import numpy as np
+
+df4 = pd.read_csv('C:/Users/j/AssociateDS/Dataset/DataSet_04.csv')
 
 #%%
 
@@ -374,7 +378,14 @@ print(classification_report(test['gender'], pred))
 # (답안 예시) 0.55
 # =============================================================================
 
-# 답
+q1 = df4[df4['LOCATION'] == 'KOR']
+
+pt = pd.pivot_table(q1, index= 'TIME',
+                    values='Value',
+                    aggfunc='sum').reset_index()
+pt.corr()
+
+# 답  0.96
 
 
 
@@ -388,9 +399,25 @@ print(classification_report(test['gender'], pred))
 # 적으시오. (알파벳 순서) (답안 예시) BEEF, PIG, POULTRY, SHEEP
 # =============================================================================
 
-# 답
+q2 = df4[df4['LOCATION'].isin(['KOR','JPN'])]
+s_list = q2.SUBJECT.unique()
+
+from scipy.stats import ttest_rel
+
+q2_out = []
+for i in s_list:
+    temp = q2[q2.SUBJECT == i]
+    pt = pd.pivot_table(temp, index='TIME', columns='LOCATION',
+                        values='Value').dropna()
+    result = ttest_rel(pt['KOR'],pt['JPN']).pvalue
+    q2_out = q2_out + [[i,result]]
+
+q2_out = pd.DataFrame(q2_out, columns=['x','p'])
+
+q2_out[q2_out.p > 0.05]
 
 
+# 답 POULTRY
 
 #%%
 
@@ -403,7 +430,27 @@ print(classification_report(test['gender'], pred))
 # 
 # =============================================================================
 
-# 답
+q3 = df4[df4['LOCATION'] == 'KOR']
+
+s_l = q3.SUBJECT.unique()
+
+from sklearn.linear_model import LinearRegression
+q3_out = []
+
+for i in s_l:
+    temp = q3[q3.SUBJECT == i]
+    lm = LinearRegression().fit(temp[['TIME']], temp['Value'])
+    r2 = lm.score(temp[['TIME']], temp['Value'])
+    pred = lm.predict(temp[['TIME']])
+    mape = (abs(temp['Value'] - pred)/ temp['Value']).sum() * 100 / len(temp)
+
+    q3_out = q3_out + [[i, r2, mape]]
+
+q3_out = pd.DataFrame(q3_out, columns=['x','r2','p'])
+
+q3_out.sort_values('r2', ascending=False).head(1)
+
+# 답 5.78
 
 
 #%%
