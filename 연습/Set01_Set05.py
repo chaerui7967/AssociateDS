@@ -29,6 +29,10 @@ Created on Sat Aug 21 12:53:16 2021
 # =============================================================================
 # pandas, scipy, numpy, sklearn, statsmodels
 
+import pandas as pd
+import numpy as np
+
+df1 = pd.read_csv('./DataSet_01.csv')
 
 
 #%%
@@ -36,6 +40,8 @@ Created on Sat Aug 21 12:53:16 2021
 # =============================================================================
 # 1. 데이터 세트 내에 총 결측값의 개수는 몇 개인가? (답안 예시) 23
 # =============================================================================
+
+df1.isna().sum().sum()
 
 
 # 답 26 
@@ -49,6 +55,9 @@ Created on Sat Aug 21 12:53:16 2021
 # - 매출액과 가장 강한 상관관계를 가지고 있는 채널의 상관계수를 소수점 5번째
 # 자리에서 반올림하여 소수점 넷째 자리까지 기술하시오. (답안 예시) 0.1234
 # =============================================================================
+
+df1.corr()['Sales'].nlargest(2)
+
 
 
 # 답  0.9995
@@ -64,7 +73,16 @@ Created on Sat Aug 21 12:53:16 2021
 # from sklearn.linear_model import LinearRegression 사용하시오.
 # =============================================================================
 
+from sklearn.linear_model import LinearRegression
 
+df1.columns
+col = ['TV', 'Radio', 'Social_Media']
+
+df1 = df1.dropna()
+
+lr = LinearRegression().fit(df1[col], df1['Sales'])
+
+lr.coef_
 
 # 답 [3.562, 0.004, - 0.003]
 
@@ -87,6 +105,12 @@ Created on Sat Aug 21 12:53:16 2021
 # =============================================================================
 # =============================================================================
 
+import pandas as pd
+import numpy as np
+
+df2 = pd.read_csv('./DataSet_02.csv')
+
+
 
 #%%
 
@@ -96,7 +120,7 @@ Created on Sat Aug 21 12:53:16 2021
 # 자리까지 기술하시오. (답안 예시) 0.123
 # =============================================================================
 
-
+pd.crosstab(index = [df2.Sex, df2.BP], columns = df2.Cholesterol, normalize=True)
 
 
 # 답 0.105
@@ -119,8 +143,31 @@ Created on Sat Aug 21 12:53:16 2021
 # (답안 예시) 3, 1.23456
 # =============================================================================
 
+q2 = df2.copy()
 
+q2['Age_gr'] = np.where(q2['Age'] < 20, '10',
+                        np.where(q2['Age'] < 30, '20',
+                                 np.where(q2['Age'] < 40, '30',
+                                          np.where(q2['Age'] < 50, '40',
+                                                   np.where(q2['Age'] < 60, '50', '60' )))))
+q2['Na_K_gr'] = np.where(q2['Na_to_K'] <= 10, 'Lv1',
+                         np.where(q2['Na_to_K'] <= 20, 'Lv2',
+                                  np.where(q2['Na_to_K'] <= 30, 'Lv3','Lv4')))
 
+from scipy.stats import chi2_contingency
+var = ['Sex', 'BP', 'Cholesterol', 'Age_gr', 'Na_K_gr']
+
+q2_out=[]
+
+for i in var:
+    tab = pd.crosstab(index = q2[i], columns=q2.Drug)
+    p = chi2_contingency(tab)
+    q2_out = q2_out + [[i, p[1]]]
+
+q2_out = pd.DataFrame(q2_out, columns=['x','pvalue'])
+
+(q2_out['pvalue']<0.05).sum()
+q2_out[q2_out['pvalue']<0.05]['pvalue'].max()
 
 # 답  4, 0.00070
 
@@ -139,7 +186,22 @@ Created on Sat Aug 21 12:53:16 2021
 # 12.345
 # =============================================================================
 
+q3 = df2.copy()
 
+q3['Sex_cd'] = np.where(q3['Sex']=='M',0,1)
+q3['BP_cd'] = np.where(q3['BP'] == 'LOW', 0,
+                       np.where(q3['BP'] == 'NORMAL',1,2))
+q3['Ch_cd'] = np.where(q3['Cholesterol'] == 'NORMAL', 0,1)
+
+feature = ['Age', 'Na_to_K', 'Sex_cd', 'BP_cd', 'Ch_cd']
+
+from sklearn.tree import DecisionTreeClassifier, export_text, plot_tree
+
+dt = DecisionTreeClassifier().fit(q3[feature], q3['Drug'])
+
+plot_tree(dt, max_depth=2, feature_names = feature, class_names=q3['Drug'].unique())
+
+export_text(dt, feature_names=feature)
 
 # 답 Na_to_K, 14.829
 
@@ -169,8 +231,10 @@ Created on Sat Aug 21 12:53:16 2021
 # =============================================================================
 # =============================================================================
 
+import pandas as pd
+import numpy as np
 
-
+df3 = pd.read_csv('./DataSet_03.csv')
 
 
 
@@ -182,6 +246,17 @@ Created on Sat Aug 21 12:53:16 2021
 # 정의할 때, 이상치에 해당하는 데이터는 몇 개인가? (답안 예시) 10
 # =============================================================================
 
+q1 = df3.copy()
+
+q1['forehead_ratio'] = q1['forehead_width_cm'] / q1['forehead_height_cm']
+
+m = q1['forehead_ratio'].mean()
+s = q1['forehead_ratio'].std()
+
+low = m - 3*s
+up = m + 3*s
+
+((q1['forehead_ratio'] > up) | (q1['forehead_ratio']<low)).sum()
 
 
 # 답 3
@@ -199,6 +274,18 @@ Created on Sat Aug 21 12:53:16 2021
 # 않을 경우 N으로 답하시오. (답안 예시) 1.234, Y
 # =============================================================================
 
+q2 = q1.copy()
+
+from scipy.stats import ttest_ind
+
+q2.gender.unique()
+
+m_r = q2[q2['gender'] == 'Male']['forehead_ratio']
+f_r = q2[q2['gender'] == 'Female']['forehead_ratio']
+
+result = ttest_ind(m_r, f_r, equal_var=False)
+result.statistic
+result.pvalue
 
 
 # 답 2.999, Y
@@ -226,7 +313,22 @@ Created on Sat Aug 21 12:53:16 2021
 # train_test_split 의 random_state = 123
 # =============================================================================
 
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
 
+q3 = df3.copy()
+q3.columns
+train, test = train_test_split(q3, test_size=0.3, random_state=123)
+
+col = q3.columns[q3.dtypes != 'object']
+
+log = LogisticRegression().fit(train[col], train.gender)
+pred = log.predict(test[col])
+
+from sklearn.metrics import precision_score, classification_report
+
+precision_score(test['gender'], pred, pos_label='Male')
+print(classification_report(test['gender'], pred))
 
 # 답 0.96
 
