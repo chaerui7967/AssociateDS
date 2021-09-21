@@ -29,7 +29,9 @@ Created on Sat Aug 21 12:53:16 2021
 # =============================================================================
 # pandas, scipy, numpy, sklearn, statsmodels
 
+import pandas as pd
 
+df1 = pd.read_csv('C:/Users/j/AssociateDS/Dataset/DataSet_01.csv')
 
 #%%
 
@@ -37,7 +39,7 @@ Created on Sat Aug 21 12:53:16 2021
 # 1. 데이터 세트 내에 총 결측값의 개수는 몇 개인가? (답안 예시) 23
 # =============================================================================
 
-
+df1.isna().sum().sum()
 
 
 # 답 26 
@@ -52,7 +54,7 @@ Created on Sat Aug 21 12:53:16 2021
 # 자리에서 반올림하여 소수점 넷째 자리까지 기술하시오. (답안 예시) 0.1234
 # =============================================================================
 
-
+df1.corr()['Sales'].nlargest(2)
 
 
 # 답  0.9995
@@ -68,7 +70,13 @@ Created on Sat Aug 21 12:53:16 2021
 # from sklearn.linear_model import LinearRegression 사용하시오.
 # =============================================================================
 
+from sklearn.linear_model import LinearRegression
 
+df1 = df1.dropna()
+col = ['TV', 'Radio', 'Social_Media']
+lr = LinearRegression().fit(df1[col], df1['Sales'])
+
+lr.coef_
 
 # 답 [3.562, 0.004, - 0.003]
 
@@ -91,7 +99,10 @@ Created on Sat Aug 21 12:53:16 2021
 # =============================================================================
 # =============================================================================
 
+import pandas as pd
+import numpy as np
 
+df2 = pd.read_csv('C:/Users/j/AssociateDS/Dataset/DataSet_02.csv')
 
 
 #%%
@@ -101,6 +112,9 @@ Created on Sat Aug 21 12:53:16 2021
 # 환자의 전체에 대비한 비율이 얼마인지 소수점 네 번째 자리에서 반올림하여 소수점 셋째
 # 자리까지 기술하시오. (답안 예시) 0.123
 # =============================================================================
+
+tab = pd.crosstab(index= [df2.Sex, df2.BP], columns=df2.Cholesterol, normalize=True)
+
 
 
 # 답 0.105
@@ -123,6 +137,34 @@ Created on Sat Aug 21 12:53:16 2021
 # (답안 예시) 3, 1.23456
 # =============================================================================
 
+q2 = df2.copy()
+
+q2['Age_gr']=np.where(q2.Age < 20, 10,
+               np.where(q2.Age < 30, 20,
+                  np.where(q2.Age < 40, 30,
+                     np.where(q2.Age < 50, 40,
+                        np.where(q2.Age < 60, 50,  60)))))
+
+q2['Na_K_gr']=np.where(q2.Na_to_K <= 10, 'Lv1',
+                np.where(q2.Na_to_K <= 20, 'Lv2',
+                   np.where(q2.Na_to_K <= 30, 'Lv3' , 'Lv4')))
+
+
+from scipy.stats import chi2_contingency
+
+col = ['Sex', 'BP', 'Cholesterol', 'Age_gr', 'Na_K_gr']
+q2_out = []
+for i in col:
+    tab = pd.crosstab(index=q2[i], columns=q2.Drug)
+    p = chi2_contingency(tab)[1]
+    q2_out = q2_out + [[i, p]]
+
+q2_out = pd.DataFrame(q2_out, columns=['x','p'])
+
+q2_out[q2_out.p < 0.05]
+q2_out[q2_out.p < 0.05].max()
+
+
 # 답  4, 0.00070
 
 
@@ -140,6 +182,18 @@ Created on Sat Aug 21 12:53:16 2021
 # 12.345
 # =============================================================================
 
+q3=df2.copy()
+
+q3['Sex_cd']=np.where(q3.Sex=='M', 0, 1)
+q3['BP_cd']=np.where(q3.BP=='LOW', 0, np.where(q3.BP=='NORMAL', 1, 2))
+q3['Ch_cd']=np.where(q3.Cholesterol=='NORMAL', 0, 1)
+
+x_var=['Age', 'Na_to_K', 'Sex_cd', 'BP_cd', 'Ch_cd']
+
+from sklearn.tree import DecisionTreeClassifier, plot_tree
+
+dt = DecisionTreeClassifier().fit(q3[x_var], q3['Drug'])
+plot_tree(dt, max_depth=2, precision=3, feature_names=x_var, class_names=q3.Drug.unique())
 
 # 답 Na_to_K, 14.829
 
@@ -169,7 +223,10 @@ Created on Sat Aug 21 12:53:16 2021
 # =============================================================================
 # =============================================================================
 
+import pandas as pd
+import numpy as np
 
+df3 = pd.read_csv('C:/Users/j/AssociateDS/Dataset/DataSet_03.csv')
 
 
 
@@ -181,8 +238,16 @@ Created on Sat Aug 21 12:53:16 2021
 # 정의할 때, 이상치에 해당하는 데이터는 몇 개인가? (답안 예시) 10
 # =============================================================================
 
+q1=df3.copy()
 
+q1['forehead_ratio']=q1['forehead_width_cm'] / q1['forehead_height_cm']
 
+x=q1['forehead_ratio'].mean()
+s=q1['forehead_ratio'].std()
+LL=x-(3*s)
+UU=x+(3*s)
+
+((q1['forehead_ratio'] < LL) | (q1['forehead_ratio'] > UU)).sum()
 
 # 답 3
 
@@ -199,8 +264,12 @@ Created on Sat Aug 21 12:53:16 2021
 # 않을 경우 N으로 답하시오. (답안 예시) 1.234, Y
 # =============================================================================
 
+from scipy.stats import ttest_ind
 
+g_m = q1[q1.gender=='Male']['forehead_ratio']
+g_f = q1[q1.gender=='Female']['forehead_ratio']
 
+q2_out=ttest_ind(g_m, g_f, equal_var=False)
 
 # 답 2.999, Y
 
@@ -226,6 +295,25 @@ Created on Sat Aug 21 12:53:16 2021
 # from sklearn import metrics
 # train_test_split 의 random_state = 123
 # =============================================================================
+
+from sklearn.model_selection import train_test_split
+
+train, test=\
+train_test_split(df3, test_size=0.3,
+                 random_state=123)
+x_var=train.columns[train.dtypes != 'object']
+
+from sklearn.linear_model import LogisticRegression
+
+logit=LogisticRegression().fit(train[x_var], train.gender)
+
+pred=logit.predict(test[x_var])
+logit.predict_proba(test[x_var])
+
+from sklearn.metrics import classification_report, precision_score
+
+print(classification_report(test.gender, pred))
+precision_score(test.gender, pred, pos_label='Male')
 
 
 # 답 0.96
@@ -260,7 +348,9 @@ Created on Sat Aug 21 12:53:16 2021
 # #3
 # from sklearn.linear_model import LinearRegression
 
+import pandas as pd
 
+df4=pd.read_csv('C:/Users/j/AssociateDS/Dataset/DataSet_04.csv')
 
 #%%
 
@@ -273,7 +363,13 @@ Created on Sat Aug 21 12:53:16 2021
 # (답안 예시) 0.55
 # =============================================================================
 
+q1=df4[df4.LOCATION == 'KOR'][['TIME', 'Value']]
 
+q1_tab=pd.pivot_table(q1, index='TIME',
+                      values='Value',
+                      aggfunc='sum').reset_index()
+
+q1_tab.corr().loc['TIME', 'Value']
 
 # 답  0.96
 
@@ -287,7 +383,22 @@ Created on Sat Aug 21 12:53:16 2021
 # 적으시오. (알파벳 순서) (답안 예시) BEEF, PIG, POULTRY, SHEEP
 # =============================================================================
 
+q2=df4[df4.LOCATION.isin(['KOR', 'JPN'])]
+sub_list=q2.SUBJECT.unique()
 
+from scipy.stats import ttest_rel
+
+q2_out=[]
+for i in sub_list:
+    temp=q2[q2.SUBJECT == i]
+    tab=pd.pivot_table(temp, index='TIME',
+                   columns='LOCATION',
+                   values='Value').dropna()
+    pvalue=ttest_rel(tab['KOR'], tab['JPN']).pvalue
+    q2_out=q2_out+[[i, pvalue]]
+
+q2_out=pd.DataFrame(q2_out, columns=['sub', 'pvalue'])
+q2_out.pvalue >= 0.05
 
 # 답 POULTRY
 
@@ -302,7 +413,25 @@ Created on Sat Aug 21 12:53:16 2021
 # 
 # =============================================================================
 
+q3=df4[df4.LOCATION =='KOR']
 
+from sklearn.linear_model import LinearRegression
+
+sub_list=q3.SUBJECT.unique()
+
+q3_out=[]
+for i in sub_list:
+    temp=q3[q3.SUBJECT == i]
+    lm=LinearRegression().fit(temp[['TIME']], temp['Value'])
+    r2_score=lm.score(temp[['TIME']], temp['Value'])
+    pred=lm.predict(temp[['TIME']])
+    # MAPE = Σ ( | y - y ̂ | / y ) * 100/n
+    mape=(abs(temp['Value'] - pred) / temp['Value']).sum() * 100 / len(temp)
+
+    q3_out.append([i, r2_score, mape])
+
+q3_out=pd.DataFrame(q3_out, columns=['sub', 'r2', 'mape'])
+q3_out.sort_values('r2', ascending=False).head(1)
 
 # 답 5.78
 
@@ -341,6 +470,10 @@ Created on Sat Aug 21 12:53:16 2021
 # =============================================================================
 # =============================================================================
 
+import pandas as pd
+df5=pd.read_csv('C:/Users/j/AssociateDS/Dataset/DataSet_05.csv', na_values=['?', 'NA', '', ' '])
+
+
 
 #(참고)
 #1
@@ -366,6 +499,7 @@ Created on Sat Aug 21 12:53:16 2021
 # (String 타입 변수의 경우 White Space(Blank)를 결측으로 처리한다) (답안 예시) 123
 # =============================================================================
 
+df5.isnull().sum().sum()
 
 
 
@@ -380,7 +514,16 @@ Created on Sat Aug 21 12:53:16 2021
 # (답안 예시) 0.2345, N
 # =============================================================================
 
+q2=df5.dropna()
 
+q2_tab=pd.crosstab(index=q2.Gender, columns=q2.Segmentation)
+
+from scipy.stats import chi2_contingency
+
+q2_out=chi2_contingency(q2_tab)
+
+round(q2_out[1],4)
+round(q2_out[1],4) < 0.05
 
 # 답  0.0031, Y
 
@@ -404,10 +547,20 @@ Created on Sat Aug 21 12:53:16 2021
 # (답안 예시) 0.12
 # =============================================================================
 
+q3=df5.dropna()
 
+q3=q3[q3.Segmentation.isin(['A','D'])]
 
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+
+train,test=train_test_split(q3, test_size=0.3, random_state=123)
+x_var=['Age_gr', 'Gender', 'Work_Experience', 'Family_Size',
+       'Ever_Married', 'Graduated', 'Spending_Score']
+dt=DecisionTreeClassifier(max_depth=7, random_state=123)
+dt.fit(train[x_var], train['Segmentation'])
+
+dt.score(test[x_var], test['Segmentation'])
 
 # 답 0.68
-
-
 
