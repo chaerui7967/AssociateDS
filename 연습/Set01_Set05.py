@@ -557,7 +557,7 @@ from sklearn.tree import DecisionTreeClassifier
 train,test=train_test_split(q3, test_size=0.3, random_state=123)
 x_var=['Age_gr', 'Gender', 'Work_Experience', 'Family_Size',
        'Ever_Married', 'Graduated', 'Spending_Score']
-dt=DecisionTreeClassifier(max_depth=7, random_state=123)
+dt=DecisionTreeClassifier(criterion='gini', max_depth=7, random_state=123)
 dt.fit(train[x_var], train['Segmentation'])
 
 dt.score(test[x_var], test['Segmentation'])
