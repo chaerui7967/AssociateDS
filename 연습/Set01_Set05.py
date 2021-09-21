@@ -29,10 +29,6 @@ Created on Sat Aug 21 12:53:16 2021
 # =============================================================================
 # pandas, scipy, numpy, sklearn, statsmodels
 
-import pandas as pd
-import numpy as np
-
-df1 = pd.read_csv('./DataSet_01.csv')
 
 
 #%%
@@ -41,7 +37,7 @@ df1 = pd.read_csv('./DataSet_01.csv')
 # 1. 데이터 세트 내에 총 결측값의 개수는 몇 개인가? (답안 예시) 23
 # =============================================================================
 
-df1.isna().sum().sum()
+
 
 
 # 답 26 
@@ -56,7 +52,6 @@ df1.isna().sum().sum()
 # 자리에서 반올림하여 소수점 넷째 자리까지 기술하시오. (답안 예시) 0.1234
 # =============================================================================
 
-df1.corr()['Sales'].nlargest(2)
 
 
 
@@ -73,16 +68,7 @@ df1.corr()['Sales'].nlargest(2)
 # from sklearn.linear_model import LinearRegression 사용하시오.
 # =============================================================================
 
-from sklearn.linear_model import LinearRegression
 
-df1.columns
-col = ['TV', 'Radio', 'Social_Media']
-
-df1 = df1.dropna()
-
-lr = LinearRegression().fit(df1[col], df1['Sales'])
-
-lr.coef_
 
 # 답 [3.562, 0.004, - 0.003]
 
@@ -105,10 +91,6 @@ lr.coef_
 # =============================================================================
 # =============================================================================
 
-import pandas as pd
-import numpy as np
-
-df2 = pd.read_csv('./DataSet_02.csv')
 
 
 
@@ -119,8 +101,6 @@ df2 = pd.read_csv('./DataSet_02.csv')
 # 환자의 전체에 대비한 비율이 얼마인지 소수점 네 번째 자리에서 반올림하여 소수점 셋째
 # 자리까지 기술하시오. (답안 예시) 0.123
 # =============================================================================
-
-pd.crosstab(index = [df2.Sex, df2.BP], columns = df2.Cholesterol, normalize=True)
 
 
 # 답 0.105
@@ -143,32 +123,6 @@ pd.crosstab(index = [df2.Sex, df2.BP], columns = df2.Cholesterol, normalize=True
 # (답안 예시) 3, 1.23456
 # =============================================================================
 
-q2 = df2.copy()
-
-q2['Age_gr'] = np.where(q2['Age'] < 20, '10',
-                        np.where(q2['Age'] < 30, '20',
-                                 np.where(q2['Age'] < 40, '30',
-                                          np.where(q2['Age'] < 50, '40',
-                                                   np.where(q2['Age'] < 60, '50', '60' )))))
-q2['Na_K_gr'] = np.where(q2['Na_to_K'] <= 10, 'Lv1',
-                         np.where(q2['Na_to_K'] <= 20, 'Lv2',
-                                  np.where(q2['Na_to_K'] <= 30, 'Lv3','Lv4')))
-
-from scipy.stats import chi2_contingency
-var = ['Sex', 'BP', 'Cholesterol', 'Age_gr', 'Na_K_gr']
-
-q2_out=[]
-
-for i in var:
-    tab = pd.crosstab(index = q2[i], columns=q2.Drug)
-    p = chi2_contingency(tab)
-    q2_out = q2_out + [[i, p[1]]]
-
-q2_out = pd.DataFrame(q2_out, columns=['x','pvalue'])
-
-(q2_out['pvalue']<0.05).sum()
-q2_out[q2_out['pvalue']<0.05]['pvalue'].max()
-
 # 답  4, 0.00070
 
 
@@ -186,22 +140,6 @@ q2_out[q2_out['pvalue']<0.05]['pvalue'].max()
 # 12.345
 # =============================================================================
 
-q3 = df2.copy()
-
-q3['Sex_cd'] = np.where(q3['Sex']=='M',0,1)
-q3['BP_cd'] = np.where(q3['BP'] == 'LOW', 0,
-                       np.where(q3['BP'] == 'NORMAL',1,2))
-q3['Ch_cd'] = np.where(q3['Cholesterol'] == 'NORMAL', 0,1)
-
-feature = ['Age', 'Na_to_K', 'Sex_cd', 'BP_cd', 'Ch_cd']
-
-from sklearn.tree import DecisionTreeClassifier, export_text, plot_tree
-
-dt = DecisionTreeClassifier().fit(q3[feature], q3['Drug'])
-
-plot_tree(dt, max_depth=2, feature_names = feature, class_names=q3['Drug'].unique())
-
-export_text(dt, feature_names=feature)
 
 # 답 Na_to_K, 14.829
 
@@ -231,10 +169,7 @@ export_text(dt, feature_names=feature)
 # =============================================================================
 # =============================================================================
 
-import pandas as pd
-import numpy as np
 
-df3 = pd.read_csv('./DataSet_03.csv')
 
 
 
@@ -246,17 +181,7 @@ df3 = pd.read_csv('./DataSet_03.csv')
 # 정의할 때, 이상치에 해당하는 데이터는 몇 개인가? (답안 예시) 10
 # =============================================================================
 
-q1 = df3.copy()
 
-q1['forehead_ratio'] = q1['forehead_width_cm'] / q1['forehead_height_cm']
-
-m = q1['forehead_ratio'].mean()
-s = q1['forehead_ratio'].std()
-
-low = m - 3*s
-up = m + 3*s
-
-((q1['forehead_ratio'] > up) | (q1['forehead_ratio']<low)).sum()
 
 
 # 답 3
@@ -274,18 +199,7 @@ up = m + 3*s
 # 않을 경우 N으로 답하시오. (답안 예시) 1.234, Y
 # =============================================================================
 
-q2 = q1.copy()
 
-from scipy.stats import ttest_ind
-
-q2.gender.unique()
-
-m_r = q2[q2['gender'] == 'Male']['forehead_ratio']
-f_r = q2[q2['gender'] == 'Female']['forehead_ratio']
-
-result = ttest_ind(m_r, f_r, equal_var=False)
-result.statistic
-result.pvalue
 
 
 # 답 2.999, Y
@@ -313,22 +227,6 @@ result.pvalue
 # train_test_split 의 random_state = 123
 # =============================================================================
 
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-
-q3 = df3.copy()
-q3.columns
-train, test = train_test_split(q3, test_size=0.3, random_state=123)
-
-col = q3.columns[q3.dtypes != 'object']
-
-log = LogisticRegression().fit(train[col], train.gender)
-pred = log.predict(test[col])
-
-from sklearn.metrics import precision_score, classification_report
-
-precision_score(test['gender'], pred, pos_label='Male')
-print(classification_report(test['gender'], pred))
 
 # 답 0.96
 
@@ -362,10 +260,7 @@ print(classification_report(test['gender'], pred))
 # #3
 # from sklearn.linear_model import LinearRegression
 
-import pandas as pd
-import numpy as np
 
-df4 = pd.read_csv('C:/Users/j/AssociateDS/Dataset/DataSet_04.csv')
 
 #%%
 
@@ -378,12 +273,7 @@ df4 = pd.read_csv('C:/Users/j/AssociateDS/Dataset/DataSet_04.csv')
 # (답안 예시) 0.55
 # =============================================================================
 
-q1 = df4[df4['LOCATION'] == 'KOR']
 
-tab = pd.pivot_table(q1, index='TIME',
-                     values= 'Value',
-                     aggfunc='sum').reset_index()
-tab.corr()
 
 # 답  0.96
 
@@ -397,21 +287,6 @@ tab.corr()
 # 적으시오. (알파벳 순서) (답안 예시) BEEF, PIG, POULTRY, SHEEP
 # =============================================================================
 
-q2 = df4[df4['LOCATION'].isin(['KOR', 'JPN'])]
-
-from scipy.stats import ttest_rel
-
-s = q2['SUBJECT'].unique()
-q2_out = []
-for i in s:
-    temp = q2[q2.SUBJECT == i]
-    tab = pd.pivot_table(temp, index='TIME', columns= 'LOCATION',
-                         values='Value').dropna()
-    p = ttest_rel(tab['KOR'], tab['JPN']).pvalue
-    q2_out = q2_out +[[i,p]]
-
-q2_out = pd.DataFrame(q2_out, columns=['x','pvalue'])
-q2_out[q2_out.pvalue >= 0.05]
 
 
 # 답 POULTRY
@@ -427,24 +302,7 @@ q2_out[q2_out.pvalue >= 0.05]
 # 
 # =============================================================================
 
-q4 = df4[df4.LOCATION == 'KOR']
 
-from sklearn.linear_model import LinearRegression
-s = q4.SUBJECT.unique()
-
-q4_out =[]
-
-for i in s:
-    temp = q4[q4.SUBJECT == i]
-    lr = LinearRegression().fit(temp[['TIME']],temp['Value'])
-    pred = lr.predict(temp[['TIME']])
-    r2 = lr.score(temp[['TIME']], temp['Value'])
-    mape = (abs(temp['Value'] - pred)/temp['Value']).sum() * 100 / len(temp)
-    q4_out.append([i, r2, mape])
-
-q4_out = pd.DataFrame(q4_out, columns=['x', 'r2', 'mape'])
-
-q4_out.sort_values(by='r2', ascending=False).head(1)
 
 # 답 5.78
 
@@ -497,10 +355,6 @@ q4_out.sort_values(by='r2', ascending=False).head(1)
 # import pydot
 
 #%%
-import pandas as pd
-import numpy as np
-
-df5 = pd.read_csv('C:/Users/j/AssociateDS/Dataset/DataSet_05.csv', na_values=['?','NA', ' ',''])
 
 
 #%%
@@ -512,8 +366,6 @@ df5 = pd.read_csv('C:/Users/j/AssociateDS/Dataset/DataSet_05.csv', na_values=['?
 # (String 타입 변수의 경우 White Space(Blank)를 결측으로 처리한다) (답안 예시) 123
 # =============================================================================
 
-df5.info()
-df5.isna().sum().sum()
 
 
 
@@ -528,17 +380,7 @@ df5.isna().sum().sum()
 # (답안 예시) 0.2345, N
 # =============================================================================
 
-q2 = df5.copy()
-q2 = q2.dropna()
 
-q2.columns
-q2.Segmentation.unique()
-
-tab = pd.crosstab(index=q2.Gender ,columns=q2.Segmentation)
-
-from scipy.stats import chi2_contingency
-
-chi2_contingency(tab) # 0.003125001283622576
 
 # 답  0.0031, Y
 
@@ -562,21 +404,8 @@ chi2_contingency(tab) # 0.003125001283622576
 # (답안 예시) 0.12
 # =============================================================================
 
-q3 = df5[df5['Segmentation'].isin(['A','D'])]
 
-q3 = q3.dropna()
 
-from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.metrics import accuracy_score
-
-train, test = train_test_split(q3, test_size=0.3, random_state=123)
-x_var = ['Age_gr', 'Gender', 'Work_Experience', 'Family_Size', 'Ever_Married', 'Graduated', 'Spending_Score']
-
-dt = DecisionTreeClassifier(max_depth=7,random_state=123)
-dt.fit(train[x_var], train['Segmentation'])
-dt.score(test[x_var], test['Segmentation'])
-accuracy_score(test['Segmentation'], dt.predict(test[x_var]))
 
 # 답 0.68
 
