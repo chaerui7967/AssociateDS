@@ -40,6 +40,10 @@ Created on Sat Aug 21 13:41:38 2021
 # =============================================================================
 # =============================================================================
 
+import pandas as pd
+import numpy as np
+
+df6 = pd.read_csv('C:/Users/j/AssociateDS/Dataset/DataSet_06.csv')
 
 #%%
 
@@ -49,7 +53,12 @@ Created on Sat Aug 21 13:41:38 2021
 # 소수점 이하는 버리고 정수부만 기술하시오. (답안 예시) 1234567
 # =============================================================================
 
-# 답
+q11 = df6[df6.waterfront == 1]['price'].mean()
+q12 = df6[df6.waterfront == 0]['price'].mean()
+
+abs(q11 - q12)
+
+# 답 1167272
 
 
 
@@ -62,8 +71,14 @@ Created on Sat Aug 21 13:41:38 2021
 # 
 # =============================================================================
 
+x_var=['price', 'bedrooms', 'bathrooms', 'sqft_living',
+       'sqft_lot', 'floors', 'yr_built']
+q2 = df6[x_var].corr().drop('price')
 
-# 답
+q2['price'].abs().idxmax()
+q2['price'].abs().idxmin()
+
+# 답 'sqft_living', 'yr_built'
 
 
 
@@ -84,11 +99,31 @@ Created on Sat Aug 21 13:41:38 2021
 # from statsmodels.formula.api import ols
 # =============================================================================
 
+q3 = df6.drop(columns = ['id', 'date', 'zipcode'])
+
+from statsmodels.formula.api import ols
+
+x_var = df6.columns.drop(['id', 'date', 'zipcode', 'price'])
+
+form = 'price~' + '+'.join(x_var)
+ols1 = ols(form, q3).fit()
+ols1.summary()
+
+ols1.pvalues
+ols1.params
+
+(ols1.pvalues < 0.05).sum() - 1
+
+(ols1.params[ols1.pvalues < 0.05] < 0).drop('Intercept').sum()
+# 답 13 2
 
 
+## Ols 사용
+from statsmodels.api import OLS, add_constant
 
-
-
+x = add_constant(q3[x_var])
+ols2 = OLS(q3['price'],x).fit()
+ols2.summary()
 
 #%%
 
@@ -125,6 +160,10 @@ Created on Sat Aug 21 13:41:38 2021
 # Solver = ‘liblinear’, random_state = 123
 # =============================================================================
 
+import pandas as pd
+import numpy as np
+
+df7 = pd.read_csv('C:/Users/j/AssociateDS/Dataset/DataSet_07.csv')
 
 #%%
 
@@ -136,9 +175,12 @@ Created on Sat Aug 21 13:41:38 2021
 # 자리에서 반올림하여 셋째 자리까지 기술하시오. (답안 예시) 0.123
 # =============================================================================
 
+x_var = ['GRE', 'TOEFL', 'CGPA', 'Chance_of_Admit']
+q1 = df7[x_var].corr().drop('Chance_of_Admit')
 
+q1['Chance_of_Admit'].nlargest(1)
 
-# 답
+# 답 0.873
 
 
 
@@ -154,11 +196,19 @@ Created on Sat Aug 21 13:41:38 2021
 # (답안 예시) 1.23
 # =============================================================================
 
+m = df7['GRE'].mean()
+
+q21 = df7[df7['GRE'] >= m]['CGPA']
+q22 = df7[df7['GRE'] < m]['CGPA']
+
+from scipy.stats import ttest_ind
+
+q2 = ttest_ind(q21,q22, equal_var=True)
+
+q2.statistic
 
 
-# 답
-
-
+# 답 19.44
 
 
 #%%
@@ -175,8 +225,24 @@ Created on Sat Aug 21 13:41:38 2021
 # (답안 예시) abc, 0.12
 # =============================================================================
 
+q3 = df7.copy()
 
-# 답
+q3['Chance_of_Admit'] = np.where(q3['Chance_of_Admit']>0.5,1,0)
+
+x_var = q3.columns.drop(['Serial_No', 'Chance_of_Admit'])
+
+from sklearn.linear_model import LogisticRegression
+
+lg = LogisticRegression(random_state=12, fit_intercept=True,
+                        solver='liblinear', C = 100000)
+lg.fit(q3[x_var], q3['Chance_of_Admit'])
+
+q3_out = pd.DataFrame({'x':x_var,
+                       'coef':abs(lg.coef_).reshape(-1)})
+q3_out['coef'].nlargest(1)
+q3_out.sort_values('coef', ascending=False)
+
+# 답 CGPA , 3.70
 
 #%%
 
@@ -208,7 +274,10 @@ Created on Sat Aug 21 13:41:38 2021
 # from sklearn.linear_model import LinearRegression
 # =============================================================================
 
+import pandas as pd
+import numpy as np
 
+df8 = pd.read_csv('C:/Users/j/AssociateDS/Dataset/DataSet_08.csv')
 
 
 #%%
@@ -219,10 +288,13 @@ Created on Sat Aug 21 13:41:38 2021
 # (답안 예시) 0.12, 0.34, 0.54
 # =============================================================================
 
+df8.columns
+# 'RandD_Spend', 'Administration',
+# 'Marketing_Spend', 'State', 'Profit'
 
+df8['State'].value_counts(normalize=True).sort_index().values
 
-
-
+# 답 0.34, 0.32, 0.34
 
 #%%
 
@@ -231,12 +303,10 @@ Created on Sat Aug 21 13:41:38 2021
 # 차이값은 소수점 이하는 버리고 정수부분만 기술하시오. (답안 예시) 1234
 # =============================================================================
 
+tab = pd.pivot_table(df8, index = 'State', values= 'Profit')
+tab.max() - tab.min()
 
-
-
-
-
-
+# 답 14868
 
 #%%
 
@@ -249,10 +319,24 @@ Created on Sat Aug 21 13:41:38 2021
 # (답안 예시) ABC, 1.56
 # =============================================================================
 
+state = df8.State.unique()
+x_var = ['RandD_Spend', 'Administration', 'Marketing_Spend']
+out = []
 
-# 답
+from sklearn.linear_model import LinearRegression
 
+for i in state:
+       temp = df8[df8.State == i]
+       lm = LinearRegression().fit(temp[x_var], temp['Profit'])
+       pred = lm.predict(temp[x_var])
+       mape = (abs(temp['Profit'] - pred)/temp['Profit']).sum() * 100 / len(temp)
+       out += [[i, mape]]
 
+out = pd.DataFrame(out, columns=['x','mape'])
+
+out.sort_values('mape')
+
+# 답 Florida   5.71
 
 #%%
 
@@ -299,6 +383,12 @@ Created on Sat Aug 21 13:41:38 2021
 # 
 # =============================================================================
 
+import pandas as pd
+import numpy as np
+
+df9 = pd.read_csv('C:/Users/j/AssociateDS/Dataset/DataSet_09.csv')
+
+
 #%%
 
 # =============================================================================
@@ -307,10 +397,10 @@ Created on Sat Aug 21 13:41:38 2021
 # =============================================================================
 
 
+df9.info()
+df9.isna().sum().sum()
 
-
-
-
+# 답 5
 
 #%%
 # =============================================================================
@@ -324,16 +414,30 @@ Created on Sat Aug 21 13:41:38 2021
 # (답안 예시) 123
 # =============================================================================
 
+from scipy.stats import chi2_contingency
 
+q2 = df9.dropna()
 
+q2['Age_gr']=np.where(q2.Age <= 20, 10,
+                np.where(q2.Age <= 30, 20,
+                   np.where(q2.Age <= 40, 30,
+                     np.where(q2.Age <= 50, 40,
+                        np.where(q2.Age <= 60, 50,  60)))))
 
+var = ['Age_gr', 'Gender', 'Customer_Type', 'Class']
 
+out = []
 
+for i in var:
+       tab = pd.crosstab(index=q2[i], columns=q2.satisfaction)
+       chi, p, *_ = chi2_contingency(tab)
+       out.append([i,chi,p])
 
+out = pd.DataFrame(out, columns=['x', 'chi', 'p'])
 
+out[out.p < 0.05]
 
-
-
+# 답 1066
 
 #%%
 
@@ -351,18 +455,26 @@ Created on Sat Aug 21 13:41:38 2021
 # 소수점 셋째 자리까지 기술하시오. (답안 예시) 0.123
 # =============================================================================
 
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import f1_score, classification_report, confusion_matrix
 
+q3 = df9.dropna()
+x_var=['Flight_Distance', 'Seat_comfort', 'Food_and_drink',
+       'Inflight_wifi_service','Inflight_entertainment', 'Onboard_service',
+       'Leg_room_service', 'Baggage_handling', 'Cleanliness',
+       'Departure_Delay_in_Minutes', 'Arrival_Delay_in_Minutes']
 
+x_train, x_test, y_train, y_test = train_test_split(q3[x_var], q3['satisfaction'],
+                                                    test_size=0.3, random_state= 123)
+lg = LogisticRegression(solver='liblinear', random_state= 123).fit(x_train, y_train)
+pred = lg.predict(x_test)
 
+f1_score(y_test, pred, pos_label='dissatisfied')
+print(classification_report(y_test, pred))
+FF, FM, MF, MM = confusion_matrix(y_test, pred).ravel()
 
-
-
-
-
-
-
-
-
+# 답 0.778
 
 
 #%%
@@ -397,6 +509,12 @@ Created on Sat Aug 21 13:41:38 2021
 # from sklearn.linear_model import LinearRegression
 # =============================================================================
 
+import pandas as pd
+import numpy as np
+
+df10 = pd.read_csv('C:/Users/j/AssociateDS/Dataset/DataSet_10.csv')
+df10 = df10.dropna(axis=1, how='all')
+
 #%%
 
 # =============================================================================
@@ -407,10 +525,15 @@ Created on Sat Aug 21 13:41:38 2021
 # (모델별 평균 → 일평균 → 최대최소 비율 계산) (답안 예시) 0.12
 # =============================================================================
 
+q1 = df10.copy()
+q1 = q1[(q1.previous_owners == 1) & (q1.engine_power == 51)]
 
-# 답
+tab = pd.pivot_table(q1, index='model', values=['km','age_in_days'])
+tab['km_per'] = tab['km']/ tab['age_in_days']
 
+tab['km_per'].min()/ tab['km_per'].max()
 
+# 답 0.97
 
 
 #%%
@@ -424,9 +547,19 @@ Created on Sat Aug 21 13:41:38 2021
 # (답안 예시) 0.23, Y
 # =============================================================================
 
-# 답
+ma = tab['km_per'].idxmax()
+mi = tab['km_per'].idxmin()
 
+q2 = df10.copy()
+q2['km_per'] = q2['km'] / q2['age_in_days']
 
+max_q2 = q2[q2.model == ma]['km_per']
+min_q2 = q2[q2.model == mi]['km_per']
+
+from scipy.stats import ttest_ind
+ttest_ind(max_q2, min_q2, equal_var=True)
+
+# 답 0.13 , N
 
 #%%
 
@@ -439,19 +572,16 @@ Created on Sat Aug 21 13:41:38 2021
 # (답안 예시) 12345
 # =============================================================================
 
+q3 = df10.copy()
+x_var= ['engine_power', 'age_in_days', 'km']
+model = q3.model.unique()
 
-# 답
+from sklearn.linear_model import LinearRegression
 
+lr = LinearRegression().fit(q3[x_var], q3['price'])
+new_data = np.array([[51,400,9500]])
+pred = lr.predict(new_data)
+pred
 
-
-
-
-
-
-
-
-
-
-
-
+# 답 10469
 
