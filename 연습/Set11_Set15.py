@@ -24,7 +24,10 @@ Created on Sat Aug 21 14:36:08 2021
 # =============================================================================
 # =============================================================================
 
+import pandas as pd
+import numpy as np
 
+df11 = pd.read_csv('C:/Users/j/AssociateDS/Dataset/DataSet_11.csv')
 
 #%%
 
@@ -36,12 +39,15 @@ Created on Sat Aug 21 14:36:08 2021
 # 활용하시오.(답안 예시) 1
 # =============================================================================
 
+q1 = df11.groupby('Country').apply(len)
+len(q1[q1 < 3])
 
+# 답  20
 
-# 답 
-
-
-
+tab = pd.pivot_table(df11, index= 'Country',
+                     columns='year', values='Happiness_Score', aggfunc='count')
+con_list = q1[q1<3].index
+q11 = df11[~df11.Country.isin(con_list)]
 
 #%%
 
@@ -55,11 +61,14 @@ Created on Sat Aug 21 14:36:08 2021
 # 12월까지의 매출 총액을 의미한다. (답안 예시) Korea, Japan, China
 # =============================================================================
 
+tab = pd.pivot_table(df11, index='Country', columns='year',
+                     values='Happiness_Score')
+q2 = tab.dropna()
+q2.loc[:, 'ratio'] = (q2.loc[:, 2017] - q2.loc[:, 2015])/2
 
+q2['ratio'].nlargest(3).index
 
-# 답
-
-
+# 답 'Latvia', 'Romania', 'Togo'
 
 #%%
 
@@ -75,10 +84,17 @@ Created on Sat Aug 21 14:36:08 2021
 # from statsmodels.formula.api import ols
 # from statsmodels.stats.anova import anova_lm
 
-# 답
+from scipy.stats import f_oneway
+from statsmodels.formula.api import ols
+from statsmodels.stats.anova import anova_lm
 
+f_oneway(q2[2015].dropna(), q2[2016].dropna(), q2[2017].dropna())
 
+ols1 = ols('Happiness_Score~C(year)', data=q11).fit()
 
+anova_lm(ols1)
+
+# 답 0.0042
 
 
 #%%
@@ -104,7 +120,10 @@ Created on Sat Aug 21 14:36:08 2021
 # =============================================================================
 # =============================================================================
 
+import pandas as pd
+import numpy as np
 
+df12 = pd.read_csv('C:/Users/j/AssociateDS/Dataset/DataSet_12.csv')
 
 #%%
 
@@ -115,9 +134,9 @@ Created on Sat Aug 21 14:36:08 2021
 # =============================================================================
 
 
+df12.corr().drop('Read_Book_per_Year')['Read_Book_per_Year'].abs().nlargest(1)
 
-
-
+# 답 0.797
 
 #%%
 
@@ -129,10 +148,20 @@ Created on Sat Aug 21 14:36:08 2021
 # - 유의 확률은 반올림하여 소수점 셋째 자리까지 기술한다. (답안 예시) 0.123
 # =============================================================================
 
+from scipy.stats import ttest_ind
 
+df12.Education_Level.value_counts()
 
+q2 = df12.copy()
 
+q2["is_grad"] = (q2["Education_Level"].isin(["석사", "박사"]) + 0)
 
+q21 = q2[q2.is_grad == 1]['Read_Book_per_Year']
+q22 = q2[q2.is_grad == 0]['Read_Book_per_Year']
+
+ttest_ind(q21,q22, equal_var=True)
+
+# 답 0.269
 
 #%%
 
@@ -148,10 +177,16 @@ Created on Sat Aug 21 14:36:08 2021
 # (참고)
 # from statsmodels.formula.api import ols
 
+from statsmodels.formula.api import ols
+q3 = df12[df12.Education_Level != '고졸'].dropna()
 
-# 답 
+x_var = df12.columns[df12.dtypes != 'object'].drop('Read_Book_per_Year')
 
+form = 'Read_Book_per_Year~'+'+'.join(x_var)
+ols1 = ols(form, q3).fit()
+ols1.summary()
 
+# 답 7.975
 
 #%%
 
@@ -181,7 +216,11 @@ Created on Sat Aug 21 14:36:08 2021
 # =============================================================================
 # =============================================================================
 
+import pandas as pd
+import numpy as np
 
+train = pd.read_csv('C:/Users/j/AssociateDS/Dataset/DataSet_13_train.csv')
+test = pd.read_csv('C:/Users/j/AssociateDS/Dataset/Dataset_13_test.csv')
 
 #%%
 
@@ -191,8 +230,10 @@ Created on Sat Aug 21 14:36:08 2021
 # - 상관계수는 반올림하여 소수점 둘째 자리까지 기술하시오. (답안 예시) 0.12
 # =============================================================================
 
+train.groupby('gender')[['experience', 'last_new_job']].corr()
 
-# 답  
+
+# 답  0.45
 
 
 #%%
@@ -207,10 +248,19 @@ Created on Sat Aug 21 14:36:08 2021
 # - p-value는 반올림하여 소수점 둘째 자리까지 기술하시오. (답안 예시) 0.12
 # =============================================================================
 
+base=train['city_development_index'].quantile(0.85)
 
-# 답 
+q2 = train[(train['major_discipline']=='STEM') &
+                 (train['city_development_index'] > base)].dropna()
+q2['target'] = q2['target'].astype(str)
 
+from scipy.stats import chi2_contingency
 
+tab = pd.crosstab(index=q2.relevent_experience,
+                  columns=q2.target)
+chi2_contingency(tab)
+
+# 답 0.64
 
 #%%
 
@@ -230,11 +280,15 @@ Created on Sat Aug 21 14:36:08 2021
 # from sklearn.tree import DecisionTreeClassifier
 # random_state = 123
 
+x_var = train.columns[train.dtypes != 'object'].drop('target')
 
+from sklearn.tree import DecisionTreeClassifier
 
-# 답
+dt = DecisionTreeClassifier(random_state= 123).fit(train[x_var], train['target'])
 
+dt.score(test[x_var], test['target'])
 
+# 답 0.67
 
 #%%
 
@@ -262,6 +316,11 @@ Created on Sat Aug 21 14:36:08 2021
 # =============================================================================
 # =============================================================================
 
+import pandas as pd
+import numpy as np
+
+df14 = pd.read_csv('C:/Users/j/AssociateDS/Dataset/DataSet_14.csv')
+
 
 #%%
 
@@ -273,11 +332,13 @@ Created on Sat Aug 21 14:36:08 2021
 
 # 단위 맞추기
 
+q1 = df14.copy()
+q1['pr'] = q1['price'] * q1['subscribers']
+q1['re'] = q1['reviews'] / q1['subscribers']
 
+((q1['pr'] >= 10000) & (q1['re'] > 0.1)).sum()
 
-
-
-
+# 답 59
 
 #%%
 
@@ -292,12 +353,15 @@ Created on Sat Aug 21 14:36:08 2021
 # 필터링 후 상관계수
 # 날짜.dt.year
 
+q2 = df14.copy()
+q2['published'] = pd.to_datetime(q2["published"])
+q2['year'] = q2.published.dt.year
 
+q2_sub = q2.loc[(q2['year'] == 2016) & (q2['subject'] == 'Web Development'),]
 
+q2_sub[['price', 'subscribers']].corr()
 
-
-
-
+# 답 0.03
 
 #%%
 
@@ -312,23 +376,21 @@ Created on Sat Aug 21 14:36:08 2021
 # from statsmodels.formula.api import ols
 # from statsmodels.stats.anova import anova_lm
 # =============================================================================
-
-
 # 회귀 분석
 
+from scipy.stats import f_oneway
 
+from statsmodels.formula.api import ols
+from statsmodels.stats.anova import anova_lm
 
+df14["review_rate"] = df14["reviews"] / df14["subscribers"]
+df14["published"] = pd.to_datetime(df14["published"])
+df14["year"] = df14["published"].dt.year
 
+model = ols('review_rate~C(year)', df14).fit()
+anova_lm(model)
 
-
-
-
-
-
-
-
-
-
+# 답 18.5
 
 #%%
 
@@ -363,8 +425,11 @@ Created on Sat Aug 21 14:36:08 2021
 # =============================================================================
 # =============================================================================
 
+import pandas as pd
+import numpy as np
 
-
+pos = pd.read_csv('C:/Users/j/AssociateDS/Dataset/Dataset_05_Mart_POS.csv')
+item = pd.read_csv('C:/Users/j/AssociateDS/Dataset/Dataset_05_item_list.csv')
 
 #%%
 
@@ -373,10 +438,11 @@ Created on Sat Aug 21 14:36:08 2021
 # 제품의 판매 개수는? (답안 예시) 1
 # =============================================================================
 
+q1 = pos['Date'].value_counts().idxmax()
 
+pos[pos['Date'] == q1]['itemDescription'].value_counts().head(1)
 
-# 답 
-
+# 답 7
 
 #%%
 
@@ -398,9 +464,38 @@ Created on Sat Aug 21 14:36:08 2021
 # 3. 1 분기 데이터 필터링(월 단위 추출)
 
 # 날짜 데이터
+pd.to_datetime(pos['Date']).dt.year
+pd.to_datetime(pos['Date']).dt.month
+pd.to_datetime(pos['Date']).dt.day
+pd.to_datetime(pos['Date']).dt.day_name(locale='ko_kr')
 
+q2=pos.copy()
 
-# 답
+q2['day']=pd.to_datetime(q2['Date']).dt.day_name(locale='ko_kr')
+q2['month']=pd.to_datetime(q2['Date']).dt.month
+q2_merge=pd.merge(q2, item,
+                  left_on='itemDescription',
+                  right_on='prod_nm', how='left')
+
+q2_merge['week']=0
+q2_merge.loc[q2_merge.day.isin(['금요일','토요일']), 'week']=1
+q2_merge.columns
+
+q2_merge2=q2_merge[q2_merge.month.isin([1,2,3])]
+
+# 일별 주류제품 구매 제품 수
+q2_tab=pd.pivot_table(q2_merge2, index='Date',
+               columns='week',
+               values='alcohol',
+               aggfunc='sum')
+
+q2_out=ttest_ind(q2_tab[0].dropna(),
+          q2_tab[1].dropna(),
+          equal_var=False)
+
+q2_out.pvalue
+
+# 답 0.02
 
 
 #%%
@@ -418,11 +513,23 @@ Created on Sat Aug 21 14:36:08 2021
 # from statsmodels.stats.anova import anova_lm
 # =============================================================================
 
+pr_list=pos['itemDescription'].value_counts().head(10).index
+q3=pos[pos['itemDescription'].isin(pr_list)]
 
+q3_tab=pd.pivot_table(data=q3, index='Date',
+                   values='itemDescription',
+                   aggfunc='count')
 
-# 답
+q3_tab.reset_index(inplace=True)
+q3_tab['day']=\
+ pd.to_datetime(q3_tab['Date']).dt.day_name(locale='ko_kr')
 
+from statsmodels.formula.api import ols
+from statsmodels.stats.anova import anova_lm
 
+ols1=ols('itemDescription~day', data=q3_tab).fit()
+anova_lm(ols1)
 
+# 답 0.52
 
 
